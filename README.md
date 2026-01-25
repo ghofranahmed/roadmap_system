@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
 <p align="center">
@@ -57,3 +58,7 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+# roadmap_system
+Roadmap System is a Laravel-based graduation project for managing educational paths in programming and IT. It provides structured roadmaps, lessons, quizzes, coding challenges, and chat rooms, helping students track progress, collaborate, and prepare for real-world opportunities.
+>>>>>>> da764de2aa24d108acb775c45ad9c2d2aef73867
