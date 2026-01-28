@@ -10,8 +10,11 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
+        "google/apiclient": "*",
+        "illuminate/log": "*",
         "laravel/framework": "^12.0",
         "laravel/sanctum": "^4.2",
+        "laravel/socialite": "^5.24",
         "laravel/tinker": "^2.10.1"
     },
     "require-dev": {
@@ -80,11 +83,17 @@
     "config": {
         "optimize-autoloader": true,
         "preferred-install": "dist",
+         "audit": {
+    "ignore": {
+      "PKSA-z3gr-8qht-p93v": "Dev-only: phpunit advisory via pest during local development"
+    }
+  },
         "sort-packages": true,
         "allow-plugins": {
             "pestphp/pest-plugin": true,
             "php-http/discovery": true
         }
+        
     },
     "minimum-stability": "stable",
     "prefer-stable": true
