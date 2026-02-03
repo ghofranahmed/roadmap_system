@@ -18,6 +18,9 @@ class User extends Authenticatable
         'password',
         'profile_picture',
         'last_active_at',
+         'google_id', // أضف
+        'github_id', // أضف
+        'avatar',
     ];
 
     protected $hidden = [
@@ -26,9 +29,10 @@ class User extends Authenticatable
     ];
 
     protected $casts = [
-        'email_verified_at' => 'datetime',
-        'password' => 'hashed',
-        'last_active_at' => 'datetime',
+    'email_verified_at' => 'datetime',
+    'password' => 'hashed',
+    'last_active_at' => 'datetime',
+    'is_admin' => 'boolean',
     ];
     public function enrollments() { 
         return $this->hasMany(RoadmapEnrollment::class); 
@@ -51,9 +55,8 @@ class User extends Authenticatable
     public function linkedAccounts() { 
         return $this->hasOne(LinkedAccount::class);
          }
-         // لإرسال إيميلات password reset
-    /*public function sendPasswordResetNotification($token)
-    {
-        $this->notify(new \App\Notifications\ResetPasswordNotification($token));
-    }*/
+     public function settings()
+{
+    return $this->hasMany(Setting::class);
+}
 }

@@ -17,18 +17,18 @@ return new class extends Migration
             $table->string('email')->unique(); // This automatically creates an index for the `email` column
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-             $table->string('profile_picture')->nullable();
+         
+            $table->string('profile_picture')->nullable();
             $table->timestamp('last_active_at')->nullable();
             $table->rememberToken();
             $table->timestamps();
             $table->index('username'); 
             // Optionally add index on 'last_active_at' for quicker queries on user activity
-            $table->index('last_active_at'); 
-             // Index for fast lookups on last_active_at
-               // Add new columns for Google and GitHub authentication
-        $table->string('google_id')->nullable();
-        $table->string('github_id')->nullable();
-        $table->string('avatar')->nullable();
+            $table->index('last_active_at');   
+            // Add new columns for Google and GitHub authentication
+            $table->string('google_id')->nullable();
+            $table->string('github_id')->nullable();
+            $table->string('avatar')->nullable();
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {

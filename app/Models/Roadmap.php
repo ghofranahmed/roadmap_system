@@ -16,5 +16,16 @@ class Roadmap extends Model
    public function chatRoom() {
     return $this->hasOne(ChatRoom::class);  // One-to-One relationship
 }
-
+ /**
+     * الحصول على المستوى بالعربية
+     */
+    public function getArabicLevel(): string
+    {
+        return match($this->level) {
+            'beginner' => 'مبتدئ',
+            'intermediate' => 'متوسط',
+            'advanced' => 'متقدم',
+            default => $this->level,
+        };
+    }
 }

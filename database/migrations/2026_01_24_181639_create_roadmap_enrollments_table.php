@@ -23,6 +23,8 @@ return new class extends Migration
         // نسبة التقدم
         $table->enum('status', ['active', 'completed', 'paused'])->default('active'); // حالة الاشتراك
        
+
+       
     });
 }
 

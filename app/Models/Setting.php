@@ -5,15 +5,16 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 
 class Setting extends Model
+
 {
- // اسم الجدول (اختياري لأن الاسم سيكون تلقائيًا 'settings' بما أن الموديل بالـ plural)
-    protected $table = 'settings';
+    protected $fillable = ['modified_by_user_id', 'key', 'value'];
 
-    // الأعمدة القابلة للتعديل (التي يمكن ملؤها عبر الإدخال)
-    protected $fillable = ['admin_id', 'key', 'value'];
-
-    // علاقة مع الـ Admin
-    public function admin() {
-        return $this->belongsTo(Admin::class);  // كل إعداد ينتمي إلى مسؤول واحد
+    public function modifiedBy()
+    {
+        return $this->belongsTo(User::class, 'modified_by_user_id');
     }
 }
+
+
+  
+

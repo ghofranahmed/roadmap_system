@@ -13,8 +13,10 @@ return new class extends Migration
     {
         Schema::create('settings', function (Blueprint $table) {
             $table->id(); // معرف الإعداد 
-            $table->foreignId('admin_id')->constrained('admins')->cascadeOnDelete(); // علاقة بالأدمن المسؤول عن الإعدادات العامة 
-            $table->string('key'); // اسم الإعداد (مثلاً: site_name, default_language, theme)
+            $table->foreignId('modified_by_user_id')
+            ->nullable()->constrained('users')
+            ->nullOnDelete();   // أفضل من cascade لأن الإعدادات ما لازم تختفي لو الأدمن اتحذف
+             $table->string('key'); // اسم الإعداد (مثلاً: site_name, default_language, theme)
             $table->text('value')->nullable(); 
             // قيمة الإعداد (مثلاً: "Roadmap System", "ar", "dark")
              $table->timestamps();

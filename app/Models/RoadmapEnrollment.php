@@ -14,4 +14,9 @@ class RoadmapEnrollment extends Model
         public function roadmap() {
              return $this->belongsTo(Roadmap::class);
               }
+              protected $casts = [
+    'started_at' => 'datetime',
+    'completed_at' => 'datetime',
+];
+
 }

@@ -183,4 +183,34 @@ class AuthController extends Controller
 
         return response()->json(['message' => 'تم حذف الحساب بنجاح']);
     }
+        /**
+     * Delete the authenticated user's profile picture.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function deleteProfilePicture(Request $request)
+    {
+        /** @var User $user */
+        $user = $request->user();
+
+        if ($user->profile_picture && Storage::disk('public')->exists($user->profile_picture)) {
+            Storage::disk('public')->delete($user->profile_picture);
+            $user->update([
+                'profile_picture' => null,
+                'last_active_at' => now()
+            ]);
+
+            return response()->json([
+                'message' => 'تم حذف الصورة الشخصية بنجاح',
+                'user' => $user
+            ]);
+        }
+
+        return response()->json([
+            'message' => 'لا توجد صورة شخصية لحذفها',
+            'user' => $user
+        ], 404);
+    }
+
 }

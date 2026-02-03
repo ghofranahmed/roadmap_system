@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers\Auth;
-
+/*
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\LinkedAccount;
@@ -164,7 +164,6 @@ class SocialAuthController extends Controller
             'token' => $token,
             'user' => ['email' => $email, 'name' => $name],
         ], 200);
-
-
-    } 
-    
+    }
+}
+    */
