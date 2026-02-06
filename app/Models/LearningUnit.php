@@ -10,9 +10,10 @@ class LearningUnit extends Model
     public function roadmap() { 
       return $this->belongsTo(Roadmap::class); 
       } 
-    public function lessons() { 
-        return $this->hasMany(Lesson::class);
-         } 
+     public function lessons()
+    {
+        return $this->hasMany(Lesson::class)->orderBy('position');
+    }
     public function quizzes() {
            return $this->hasMany(Quiz::class);
      } 

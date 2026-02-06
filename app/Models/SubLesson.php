@@ -6,7 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class SubLesson extends Model
 {
-    protected $fillable = [ 'lesson_id', 'position', 'description'];
+     protected $fillable = [
+        'lesson_id',
+        'position',
+        'description'
+    ];
     public function lesson() {
          return $this->belongsTo(Lesson::class);
           }

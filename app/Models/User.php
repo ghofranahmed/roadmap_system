@@ -58,5 +58,21 @@ class User extends Authenticatable
      public function settings()
 {
     return $this->hasMany(Setting::class);
+} /**
+     * التحقق مما إذا كان المستخدم مشتركاً في خريطة طريق معينة
+     */
+public function hasEnrolled($roadmapId)
+{
+    // تأكد أنك لا تكتب $roadmapId->id() هنا
+    return $this->enrollments()->where('roadmap_id', $roadmapId)->exists();
 }
+    
+    /**
+     * دالة مساعدة للتحقق من الصلاحيات (Admin)
+     * ستستخدمها في Middleware الأدمن
+     */
+    public function isAdmin(): bool
+    {
+        return (bool) $this->is_admin;
+    }
 }

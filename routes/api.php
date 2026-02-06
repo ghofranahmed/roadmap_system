@@ -3,8 +3,11 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\LearningUnitController;
 use App\Http\Controllers\CommunityController;
 use App\Http\Controllers\EnrollmentController;
+use App\Http\Controllers\{LessonController, SubLessonController, ResourceController, LessonTrackingController};
+
 use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\RoadmapController;
@@ -65,9 +68,78 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/roadmaps/{id}/enroll', [EnrollmentController::class, 'enroll']);
     Route::get('/me/enrollments', [EnrollmentController::class, 'myEnrollments']);
     Route::patch('/me/enrollments/{roadmapId}/status', [EnrollmentController::class, 'updateStatus']);
+    Route::delete('/roadmaps/{id}/unenroll', [EnrollmentController::class, 'unenroll']);
+
 });
 
 
 
-Route::middleware('auth:sanctum')->get('/me/community', [CommunityController::class, 'myCommunityRooms']);
+Route::middleware('auth:sanctum')
+->get('/me/community', [CommunityController::class, 'myCommunityRooms']);
 
+
+
+/*
+|--------------------------------------------------------------------------
+| User Routes (Read Only + Enrolled Check)
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth:sanctum', 'enrolled'])->group(function () {
+    Route::get('/roadmaps/{roadmapId}/units', [LearningUnitController::class, 'index']);
+    Route::get('/roadmaps/{roadmapId}/units/{unitId}', [LearningUnitController::class, 'show']);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Admin Routes (Full CRUD)
+|--------------------------------------------------------------------------
+*/
+// نفترض وجود middleware اسمه 'admin' للتحقق من صلاحية المسؤول
+Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
+    
+    // Get & Create scoped by Roadmap
+    Route::get('/roadmaps/{roadmapId}/units', [LearningUnitController::class, 'adminIndex']);
+    Route::post('/roadmaps/{roadmapId}/units', [LearningUnitController::class, 'store']);
+
+    // Update & Delete scoped by Unit ID directly
+    Route::put('/units/{unitId}', [LearningUnitController::class, 'update']);
+    Route::delete('/units/{unitId}', [LearningUnitController::class, 'destroy']);
+    // 1. Reorder Units (Drag & Drop)
+    // نستخدم PATCH لأننا نعدل جزئياً في مجموعة موارد
+    Route::patch('/roadmaps/{roadmapId}/units/reorder', [LearningUnitController::class, 'reorder']);
+
+    // 2. Toggle Active Status
+    Route::patch('/units/{unitId}/toggle-active', [LearningUnitController::class, 'toggleActive']);
+});
+
+// User Routes (المتعلم)
+Route::middleware(['auth:sanctum', 'enrolled'])->group(function () {
+    Route::get('/units/{unitId}/lessons', [LessonController::class, 'index']);
+    Route::get('/lessons/{lessonId}', [LessonController::class, 'show']);
+    Route::get('/sub-lessons/{subLessonId}/resources', [ResourceController::class, 'index']);
+    
+    // Tracking
+    Route::post('/lessons/{lessonId}/track/open', [LessonTrackingController::class, 'open']);
+    Route::post('/lessons/{lessonId}/track/complete', [LessonTrackingController::class, 'complete']);
+});
+
+// Admin Routes (المسؤول)
+Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
+    // Lessons
+    Route::get('/units/{unitId}/lessons', [LessonController::class, 'adminIndex']);
+    Route::post('/units/{unitId}/lessons', [LessonController::class, 'store']);
+    Route::put('/lessons/{lessonId}', [LessonController::class, 'update']);
+    Route::delete('/lessons/{lessonId}', [LessonController::class, 'destroy']);
+
+    // Sub-Lessons
+    Route::get('/lessons/{lessonId}/sub-lessons', [SubLessonController::class, 'index']);
+    Route::post('/lessons/{lessonId}/sub-lessons', [SubLessonController::class, 'store']);
+    Route::put('/sub-lessons/{subLessonId}', [SubLessonController::class, 'update']);
+    Route::delete('/sub-lessons/{subLessonId}', [SubLessonController::class, 'destroy']);
+
+    // Resources
+    Route::get('/sub-lessons/{subLessonId}/resources', [ResourceController::class, 'adminIndex']);
+    Route::post('/sub-lessons/{subLessonId}/resources', [ResourceController::class, 'store']);
+    Route::put('/resources/{resourceId}', [ResourceController::class, 'update']);
+    Route::delete('/resources/{resourceId}', [ResourceController::class, 'destroy']);
+});
