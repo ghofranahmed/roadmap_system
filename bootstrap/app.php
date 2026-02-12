@@ -14,26 +14,21 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__ . '/../routes/console.php',
         health: '/up',
     )
-
-    // =========================
-    // Register Middlewares
-    // =========================
     ->withMiddleware(function (Middleware $middleware): void {
+        
+        // --- إضافة هذا السطر للسماح لطلبات الـ API من فلاتر بالعمل بدون مشاكل CSRF ---
+        $middleware->validateCsrfTokens(except: [
+            'api/*', 
+        ]);
 
-        // Alias for Admin Middleware
+        // Alias for Middlewares
         $middleware->alias([
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
             'enrolled' => EnsureUserIsEnrolled::class,
         ]);
 
     })
-
-    // =========================
-    // Exception Handling
-    // =========================
     ->withExceptions(function (Exceptions $exceptions): void {
-
-        // Handle unauthenticated requests (Sanctum / auth)
         $exceptions->render(function (AuthenticationException $e, Request $request) {
             if ($request->expectsJson()) {
                 return response()->json([
@@ -41,10 +36,7 @@ return Application::configure(basePath: dirname(__DIR__))
                     'error'   => 'Unauthenticated',
                 ], 401);
             }
-
             return redirect()->guest(route('login'));
         });
-
     })
-
     ->create();
