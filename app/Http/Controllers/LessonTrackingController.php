@@ -29,7 +29,7 @@ class LessonTrackingController extends Controller
             ->exists();
 
         if (!$isEnrolled) {
-            return response()->json(['message' => 'يجب الاشتراك في المسار أولاً'], 403);
+            return $this->errorResponse('يجب الاشتراك في المسار أولاً', null, 403);
         }
 
         $tracking = LessonTracking::firstOrCreate(
@@ -42,15 +42,11 @@ class LessonTrackingController extends Controller
             $tracking->update(['last_updated_at' => now()]);
         }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'تم تسجيل فتح الدرس',
-            'data' => [
-                'lesson_id' => $lessonId,
-                'is_complete' => (bool)$tracking->is_complete,
-                'last_updated_at' => $tracking->last_updated_at,
-            ]
-        ]);
+        return $this->successResponse([
+            'lesson_id' => $lessonId,
+            'is_complete' => (bool)$tracking->is_complete,
+            'last_updated_at' => $tracking->last_updated_at,
+        ], 'تم تسجيل فتح الدرس');
     }
 
     /**
@@ -72,7 +68,7 @@ class LessonTrackingController extends Controller
             ->exists();
 
         if (!$isEnrolled) {
-            return response()->json(['message' => 'يجب الاشتراك في المسار أولاً'], 403);
+            return $this->errorResponse('يجب الاشتراك في المسار أولاً', null, 403);
         }
 
         $tracking = LessonTracking::updateOrCreate(
@@ -80,15 +76,11 @@ class LessonTrackingController extends Controller
             ['is_complete' => true, 'last_updated_at' => now()]
         );
 
-        return response()->json([
-            'success' => true,
-            'message' => 'تم إكمال الدرس بنجاح',
-            'data' => [
-                'lesson_id' => $lessonId,
-                'is_complete' => true,
-                'last_updated_at' => $tracking->last_updated_at,
-            ]
-        ]);
+        return $this->successResponse([
+            'lesson_id' => $lessonId,
+            'is_complete' => true,
+            'last_updated_at' => $tracking->last_updated_at,
+        ], 'تم إكمال الدرس بنجاح');
     }
 
     /**
@@ -103,14 +95,11 @@ class LessonTrackingController extends Controller
             ->where('lesson_id', $lessonId)
             ->first();
 
-        return response()->json([
-            'success' => true,
-            'data' => $tracking ? [
-                'lesson_id' => (int)$lessonId,
-                'is_complete' => (bool)$tracking->is_complete,
-                'last_updated_at' => $tracking->last_updated_at,
-            ] : null
-        ]);
+        return $this->successResponse($tracking ? [
+            'lesson_id' => (int)$lessonId,
+            'is_complete' => (bool)$tracking->is_complete,
+            'last_updated_at' => $tracking->last_updated_at,
+        ] : null);
     }
 
     /**
@@ -126,7 +115,7 @@ class LessonTrackingController extends Controller
             ->first();
 
         if (!$tracking) {
-            return response()->json(['message' => 'لا يوجد تتبع لهذا الدرس'], 404);
+            return $this->errorResponse('لا يوجد تتبع لهذا الدرس', null, 404);
         }
 
         $tracking->update([
@@ -134,15 +123,11 @@ class LessonTrackingController extends Controller
             'last_updated_at' => now()
         ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'تم إعادة تعيين تتبع الدرس',
-            'data' => [
-                'lesson_id' => (int)$lessonId,
-                'is_complete' => false,
-                'last_updated_at' => $tracking->last_updated_at,
-            ]
-        ]);
+        return $this->successResponse([
+            'lesson_id' => (int)$lessonId,
+            'is_complete' => false,
+            'last_updated_at' => $tracking->last_updated_at,
+        ], 'تم إعادة تعيين تتبع الدرس');
     }
 
     /**
@@ -154,11 +139,11 @@ class LessonTrackingController extends Controller
         $userId = Auth::id();
 
         $trackings = LessonTracking::where('user_id', $userId)
-            ->with(['lesson:id,title,learning_unit_id'])
+            ->with(['lesson:id,title,learning_unit_id', 'lesson.learningUnit:id,title,roadmap_id'])
             ->orderByDesc('last_updated_at')
-            ->paginate($request->per_page ?? 20);
+            ->paginate($request->get('per_page', 20));
 
-        return response()->json(['success' => true, 'data' => $trackings]);
+        return $this->paginatedResponse($trackings, 'Tracking data retrieved successfully');
     }
 
     /**
@@ -171,13 +156,10 @@ class LessonTrackingController extends Controller
         $total = LessonTracking::where('user_id', $userId)->count();
         $completed = LessonTracking::where('user_id', $userId)->where('is_complete', true)->count();
 
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'total_tracked' => $total,
-                'completed' => $completed,
-                'completion_rate' => $total > 0 ? round(($completed / $total) * 100, 2) : 0
-            ]
+        return $this->successResponse([
+            'total_tracked' => $total,
+            'completed' => $completed,
+            'completion_rate' => $total > 0 ? round(($completed / $total) * 100, 2) : 0
         ]);
     }
 }

@@ -20,10 +20,11 @@ class LearningUnitController extends Controller
     {
         // جلب الوحدات مرتبة حسب الموقع
         $units = LearningUnit::where('roadmap_id', $roadmapId)
+            ->withCount(['lessons', 'quizzes', 'challenges'])
             ->orderBy('position')
             ->get();
 
-        return response()->json(['data' => $units]);
+        return $this->successResponse($units);
     }
 
     public function show($roadmapId, $unitId)
@@ -33,7 +34,7 @@ class LearningUnitController extends Controller
             ->where('id', $unitId)
             ->firstOrFail();
 
-        return response()->json(['data' => $unit]);
+        return $this->successResponse($unit);
     }
 
     // ==========================
@@ -44,10 +45,11 @@ class LearningUnitController extends Controller
     {
         // قد يحتاج الأدمن لمعلومات أكثر تفصيلاً (مثل created_at)
         $units = LearningUnit::where('roadmap_id', $roadmapId)
+            ->withCount(['lessons', 'quizzes', 'challenges'])
             ->orderBy('position')
             ->get();
 
-        return response()->json(['data' => $units]);
+        return $this->successResponse($units);
     }
 
     public function store(StoreLearningUnitRequest $request, $roadmapId)
@@ -63,7 +65,7 @@ class LearningUnitController extends Controller
             'position' => $position,
         ]);
 
-        return response()->json(['message' => 'Unit created successfully', 'data' => $unit], 201);
+        return $this->successResponse($unit, 'Unit created successfully', 201);
     }
 
     public function update(StoreLearningUnitRequest $request, $unitId)
@@ -72,7 +74,7 @@ class LearningUnitController extends Controller
         
         $unit->update($request->validated());
 
-        return response()->json(['message' => 'Unit updated successfully', 'data' => $unit]);
+        return $this->successResponse($unit, 'Unit updated successfully');
     }
 
     public function destroy($unitId)
@@ -80,7 +82,7 @@ class LearningUnitController extends Controller
         $unit = LearningUnit::findOrFail($unitId);
         $unit->delete();
 
-        return response()->json(['message' => 'Unit deleted successfully']);
+        return $this->successResponse(null, 'Unit deleted successfully');
     }
     // ==========================
     // New Admin Methods
@@ -100,12 +102,11 @@ class LearningUnitController extends Controller
                     ->count();
 
         if ($count !== count($orderedIds)) {
-            return response()->json([
-                'message' => 'Validation Error',
-                'errors' => [
-                    'unit_ids' => ['One or more units do not belong to this roadmap or duplicates exist.']
-                ]
-            ], 422);
+            return $this->errorResponse(
+                'Validation Error',
+                ['unit_ids' => ['One or more units do not belong to this roadmap or duplicates exist.']],
+                422
+            );
         }
 
         // 2. تنفيذ التحديث داخل Transaction لضمان سلامة البيانات
@@ -116,7 +117,7 @@ class LearningUnitController extends Controller
             }
         });
 
-        return response()->json(['message' => 'Units reordered successfully']);
+        return $this->successResponse(null, 'Units reordered successfully');
     }
 
     /**
@@ -131,13 +132,10 @@ class LearningUnitController extends Controller
             'is_active' => ! $unit->is_active
         ]);
 
-        return response()->json([
-            'message' => 'Unit status updated',
-            'data' => [
-                'unit_id' => $unit->id,
-                'is_active' => $unit->is_active,
-                'title' => $unit->title
-            ]
-        ]);
+        return $this->successResponse([
+            'unit_id' => $unit->id,
+            'is_active' => $unit->is_active,
+            'title' => $unit->title
+        ], 'Unit status updated');
     }
 }

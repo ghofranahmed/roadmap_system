@@ -54,6 +54,7 @@ class RoadmapController extends Controller
             $validated = $request->validated();
             
             $roadmaps = Roadmap::where('is_active', true)
+                ->withCount(['enrollments', 'learningUnits'])
                 ->when(!empty($validated['query']), function ($query) use ($validated) {
                     $query->where(function ($q) use ($validated) {
                         $q->where('title', 'like', "%{$validated['query']}%")
@@ -66,15 +67,13 @@ class RoadmapController extends Controller
                 ->limit($validated['limit'] ?? 10)
                 ->get();
             
-            return response()->json([
-                'success' => true,
-                'data' => RoadmapResource::collection($roadmaps),
-                'message' => 'تم البحث بنجاح',
+            return $this->successResponse([
+                'roadmaps' => RoadmapResource::collection($roadmaps),
                 'meta' => [
                     'total_results' => $roadmaps->count(),
-                    'search_query' => $validated['query']
+                    'search_query' => $validated['query'] ?? null
                 ]
-            ]);
+            ], 'تم البحث بنجاح');
             
         } catch (\Exception $e) {
             return $this->handleException($e, 'Roadmap search error', $request->all());
@@ -96,7 +95,7 @@ class RoadmapController extends Controller
             $roadmap = Roadmap::withCount(['enrollments', 'learningUnits'])
                 ->when($validated['with_details'] ?? false, function ($query) {
                     $query->with(['learningUnits' => function ($q) {
-                        $q->withCount('lessons')->orderBy('order_index');
+                        $q->withCount('lessons')->orderBy('position');
                     }]);
                 })
                 ->when($validated['include_content'] ?? false, function ($query) {
@@ -108,17 +107,10 @@ class RoadmapController extends Controller
             
             
             
-            return response()->json([
-                'success' => true,
-                'data' => new RoadmapResource($roadmap),
-                'message' => 'تم جلب المسار بنجاح',
-            ]);
+            return $this->successResponse(new RoadmapResource($roadmap), 'تم جلب المسار بنجاح');
             
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'المسار غير موجود',
-            ], Response::HTTP_NOT_FOUND);
+            return $this->errorResponse('المسار غير موجود', null, Response::HTTP_NOT_FOUND);
             
         } catch (\Exception $e) {
             return $this->handleException($e, 'Roadmap show error', [
@@ -134,6 +126,9 @@ class RoadmapController extends Controller
     private function buildRoadmapQuery(array $params)
     {
         $query = Roadmap::query();
+        
+        // Eager load relationships to prevent N+1
+        $query->withCount(['enrollments', 'learningUnits']);
         
         // الترشيح حسب المستوى
         if (isset($params['level'])) {
@@ -158,7 +153,7 @@ class RoadmapController extends Controller
         $orderDirection = $params['order_direction'] ?? 'desc';
         
         if ($orderBy === 'enrollments_count') {
-            $query->withCount('enrollments')->orderBy('enrollments_count', $orderDirection);
+            $query->orderBy('enrollments_count', $orderDirection);
         } else {
             $query->orderBy($orderBy, $orderDirection);
         }
@@ -210,20 +205,18 @@ class RoadmapController extends Controller
             'context' => $context,
         ]);
         
-        return response()->json([
-            'success' => false,
-            'message' => 'حدث خطأ أثناء معالجة الطلب',
-            'error' => config('app.debug') ? $e->getMessage() : null,
-        ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        return $this->errorResponse(
+            'حدث خطأ أثناء معالجة الطلب',
+            config('app.debug') ? ['error' => $e->getMessage()] : null,
+            Response::HTTP_INTERNAL_SERVER_ERROR
+        );
     }
     public function enrollments($id)
-{
-    $roadmap = Roadmap::with('enrollments.user')->findOrFail($id);
+    {
+        $roadmap = Roadmap::with(['enrollments.user:id,username,email,profile_picture'])
+            ->findOrFail($id);
 
-    return response()->json([
-        'success' => true,
-        'data' => $roadmap->enrollments,
-    ]);
-}
+        return $this->successResponse($roadmap->enrollments);
+    }
 
 }

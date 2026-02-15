@@ -8,47 +8,56 @@ use App\Models\ChallengeAttempt;
 use App\Models\LearningUnit;
 use App\Models\RoadmapEnrollment;
 use App\Services\Compiler\CompilerServiceInterface;
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class ChallengeController extends Controller
 {
+    use ApiResponse;
+
     public function __construct(private CompilerServiceInterface $compiler) {}
 
     // GET /units/{unitId}/challenges
-   public function index(Request $request, int $unitId)
-{
-    $unit = LearningUnit::findOrFail($unitId);
+    public function index(Request $request, int $unitId)
+    {
+        $unit = LearningUnit::findOrFail($unitId);
 
-    if ($unit->unit_type !== 'challenge') {
-        return response()->json(['success' => false, 'message' => 'This unit is not a challenge unit'], 422);
+        if ($unit->unit_type !== 'challenge') {
+            return $this->errorResponse('This unit is not a challenge unit', null, 422);
+        }
+
+        $userId = $request->user()->id;
+
+        $enrollment = RoadmapEnrollment::where('user_id', $userId)
+            ->where('roadmap_id', $unit->roadmap_id)
+            ->first();
+
+        $xp = $enrollment?->xp_points ?? 0;
+
+        $challenge = Challenge::where('learning_unit_id', $unitId)
+            ->where('is_active', true)
+            ->first();
+
+        if (!$challenge) {
+            return $this->successResponse([
+                'xp_points' => $xp,
+                'challenge' => null,
+            ]);
+        }
+
+        // Check unlock status via policy
+        $challenge->is_unlocked = $request->user()->can('view', $challenge);
+
+        // Hide test cases from client
+        $challengeData = $challenge->toArray();
+        unset($challengeData['test_cases']);
+
+        return $this->successResponse([
+            'xp_points' => $xp,
+            'challenge' => $challengeData,
+        ]);
     }
-
-    $userId = $request->user()->id;
-
-    $enrollment = RoadmapEnrollment::where('user_id', $userId)
-        ->where('roadmap_id', $unit->roadmap_id)
-        ->first();
-
-    $xp = $enrollment?->xp_points ?? 0;
-
-    $challenge = Challenge::where('learning_unit_id', $unitId)
-        ->where('is_active', true)
-        ->first();
-
-    if (!$challenge) {
-        return response()->json(['success' => true, 'xp_points' => $xp, 'challenge' => null]);
-    }
-
-    // ✅ unlock by ChallengePolicy
-    $challenge->is_unlocked = $request->user()->can('view', $challenge);
-
-    return response()->json([
-        'success' => true,
-        'xp_points' => $xp,
-        'challenge' => $challenge,
-    ]);
-}
 
 
     // POST /challenges/{challengeId}/attempts
@@ -66,10 +75,7 @@ class ChallengeController extends Controller
             'passed' => false,
         ]);
 
-        return response()->json([
-            'success' => true,
-            'attempt' => $attempt
-        ], 201);
+        return $this->successResponse($attempt, 'Attempt started successfully', 201);
     }
 
     // PUT /challenge-attempts/{challengeAttemptId}/submit
@@ -78,14 +84,19 @@ class ChallengeController extends Controller
         $attempt = ChallengeAttempt::with('challenge.learningUnit')->findOrFail($challengeAttemptId);
         $this->authorize('update', $attempt);
 
+        // Double-check: prevent resubmit if already passed
+        if ($attempt->passed) {
+            return $this->errorResponse('This attempt has already been passed and cannot be resubmitted', null, 403);
+        }
+
         $challenge = $attempt->challenge;
 
-        // ✅ نخلي اسم الحقل زي ما عندك
         $code = $request->input('code');
         $testCases = $challenge->test_cases ?? [];
 
         $allPassed = true;
         $details = [];
+        $maxOutputLength = 10000; // Limit output size to prevent abuse
 
         foreach ($testCases as $i => $case) {
             $stdin = $case['stdin'] ?? '';
@@ -93,6 +104,11 @@ class ChallengeController extends Controller
 
             $res = $this->compiler->execute($code, $challenge->language, $stdin);
             $output = $res['output'] ?? '';
+
+            // Sanitize output: limit size
+            if (strlen($output) > $maxOutputLength) {
+                $output = substr($output, 0, $maxOutputLength) . '... (truncated)';
+            }
 
             $ok = ($res['success'] ?? false) && (trim($output) === trim($expected));
 
@@ -107,21 +123,27 @@ class ChallengeController extends Controller
             if (!$ok) $allPassed = false;
         }
 
-        DB::transaction(function () use ($attempt, $code, $details, $allPassed) {
+        // Sanitize execution_output JSON
+        $executionOutput = json_encode($details, JSON_UNESCAPED_UNICODE);
+        if (strlen($executionOutput) > 50000) {
+            $executionOutput = json_encode([
+                'error' => 'Output too large',
+                'truncated' => true,
+            ]);
+        }
+
+        DB::transaction(function () use ($attempt, $code, $executionOutput, $allPassed) {
             $attempt->submitted_code = $code;
-            $attempt->execution_output = json_encode($details, JSON_UNESCAPED_UNICODE);
+            $attempt->execution_output = $executionOutput;
             $attempt->passed = $allPassed;
             $attempt->save();
-
-            // ❌ لا XP هنا (حسب شرطك)
         });
 
-        return response()->json([
-            'success' => true,
+        return $this->successResponse([
             'passed' => $allPassed,
             'attempt' => $attempt->fresh(),
             'details' => $details,
-        ]);
+        ], 'Attempt submitted successfully');
     }
 
     // GET /challenge-attempts/{challengeAttemptId}
@@ -130,10 +152,7 @@ class ChallengeController extends Controller
         $attempt = ChallengeAttempt::with('challenge')->findOrFail($challengeAttemptId);
         $this->authorize('view', $attempt);
 
-        return response()->json([
-            'success' => true,
-            'attempt' => $attempt
-        ]);
+        return $this->successResponse($attempt);
     }
 
     // GET /challenges/{challengeId}/my-attempts
@@ -143,12 +162,10 @@ class ChallengeController extends Controller
 
         $attempts = ChallengeAttempt::where('challenge_id', $challengeId)
             ->where('user_id', $userId)
-            ->orderByDesc('id')
-            ->get();
+            ->with('challenge:id,title,language,min_xp')
+            ->orderByDesc('created_at')
+            ->paginate($request->get('per_page', 15));
 
-        return response()->json([
-            'success' => true,
-            'attempts' => $attempts
-        ]);
+        return $this->paginatedResponse($attempts, 'Attempts retrieved successfully');
     }
 }

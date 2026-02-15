@@ -27,20 +27,31 @@ use App\Http\Controllers\Admin\AdminQuizQuestionController;
 
 /*
 |--------------------------------------------------------------------------
+| API v1 Routes
+|--------------------------------------------------------------------------
+*/
+Route::prefix('v1')->group(function () {
+
+/*
+|--------------------------------------------------------------------------
 | AUTH Routes (Public)
 |--------------------------------------------------------------------------
 */
 Route::get('/test-connection', function () {
-    return response()->json(['message' => 'الاتصال ناجح والجهاز واصل بالإنترنت!']);
+    return response()->json([
+        'success' => true,
+        'message' => 'الاتصال ناجح والجهاز واصل بالإنترنت!',
+        'data' => null
+    ]);
 });
 
 Route::prefix('auth')->group(function () {
-    Route::post('/register', [AuthController::class, 'register']);
-    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:5,1');
+    Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
 
-    Route::post('/forgot-password', [PasswordResetController::class, 'forgotPassword']);
-    Route::post('/verify-reset-token', [PasswordResetController::class, 'verifyToken']);
-    Route::post('/reset-password', [PasswordResetController::class, 'resetPassword']);
+    Route::post('/forgot-password', [PasswordResetController::class, 'forgotPassword'])->middleware('throttle:3,1');
+    Route::post('/verify-reset-token', [PasswordResetController::class, 'verifyToken'])->middleware('throttle:5,1');
+    Route::post('/reset-password', [PasswordResetController::class, 'resetPassword'])->middleware('throttle:3,1');
     Route::get('/reset-attempts', [PasswordResetController::class, 'getAttemptsRemaining']);
 
     // Route::post('/google', [SocialAuthController::class, 'google']);
@@ -136,14 +147,15 @@ Route::middleware(['auth:sanctum', 'enrolled'])->group(function () {
 
     // ===== QUIZZES =====
     Route::get('/units/{unitId}/quizzes', [QuizController::class, 'index']);
-    Route::get('/quizzes/{quizId}', [QuizController::class, 'startAttempt']);
-    Route::put('/quiz-attempts/{attemptId}/submit', [QuizController::class, 'submitAttempt']);
+    Route::get('/quizzes/{quizId}', [QuizController::class, 'startAttempt'])->middleware('throttle:5,1');
+    Route::put('/quiz-attempts/{attemptId}/submit', [QuizController::class, 'submitAttempt'])->middleware('throttle:5,1');
     Route::get('/quiz-attempts/{attemptId}', [QuizController::class, 'showAttempt']);
     Route::get('/quizzes/{quizId}/my-attempts', [QuizController::class, 'myAttempts']);
 
     // ===== CHALLENGES =====
     Route::get('/units/{unitId}/challenges', [ChallengeController::class, 'index']);
-    Route::post('/challenges/{challengeId}/attempts', [ChallengeController::class, 'startAttempt']);
+    Route::post('/challenges/{challengeId}/attempts', [ChallengeController::class, 'startAttempt'])
+        ->middleware('throttle:5,1');
     Route::put('/challenge-attempts/{challengeAttemptId}/submit', [ChallengeController::class, 'submitAttempt'])
         ->middleware('throttle:10,1');
     Route::get('/challenge-attempts/{challengeAttemptId}', [ChallengeController::class, 'showAttempt']);
@@ -160,7 +172,7 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     // Roadmaps Admin
     Route::prefix('roadmaps')->group(function () {
         Route::get('/', [AdminRoadmapController::class, 'index']);
-        Route::post('/add', [AdminRoadmapController::class, 'store']);
+        Route::post('/', [AdminRoadmapController::class, 'store']);
         Route::put('/{id}', [AdminRoadmapController::class, 'update']);
         Route::delete('/{id}', [AdminRoadmapController::class, 'destroy']);
         Route::patch('/{id}/toggle-active', [AdminRoadmapController::class, 'toggleActive']);
@@ -220,3 +232,5 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::delete('/challenges/{challengeId}', [AdminChallengeController::class, 'destroy']);
     Route::patch('/challenges/{challengeId}/toggle-active', [AdminChallengeController::class, 'toggleActive']);
 });
+
+}); // End v1 prefix

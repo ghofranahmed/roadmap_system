@@ -27,7 +27,22 @@ class ChallengeAttemptPolicy
 
         if (!$enrollment) return false;
 
-        return (int)$enrollment->xp_points >= (int)$challenge->min_xp;
+        // Check XP unlock requirement
+        if ((int)$enrollment->xp_points < (int)$challenge->min_xp) {
+            return false;
+        }
+
+        // Prevent multiple active attempts (attempts without execution_output are considered active)
+        $activeAttempt = \App\Models\ChallengeAttempt::where('challenge_id', $challenge->id)
+            ->where('user_id', $user->id)
+            ->whereNull('execution_output')
+            ->exists();
+
+        if ($activeAttempt) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -45,8 +60,11 @@ class ChallengeAttemptPolicy
     {
         if ($user->id !== $attempt->user_id) return false;
 
-        // بما إن ما عندكش submitted_at
+        // Prevent resubmitting after already submitted
         if (!is_null($attempt->execution_output)) return false;
+
+        // Prevent resubmitting after passing
+        if ($attempt->passed) return false;
 
         return true;
     }

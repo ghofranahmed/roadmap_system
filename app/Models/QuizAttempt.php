@@ -7,9 +7,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class QuizAttempt extends Model
 {
-    // المايجريشن لا يحتوي على timestamps
-    public $timestamps = false;
-
     protected $fillable = [
         'quiz_id',
         'user_id',

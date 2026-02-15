@@ -1,33 +1,45 @@
 <?php
-namespace App\Http\Controllers\Admin; // تأكد من وجود \Admin
+
+namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreQuizRequest;
+use App\Http\Requests\UpdateQuizRequest;
 use App\Models\Quiz;
 use Illuminate\Http\Request;
 
 class AdminQuizController extends Controller
 {
-    public function index() { return Quiz::all(); }
-
-    public function store(Request $request) {
-        return Quiz::create($request->validate([
-            'learning_unit_id' => 'required|exists:learning_units,id',
-            'is_active' => 'boolean',
-            'max_xp' => 'integer',
-            'min_xp' => 'integer',
-        ]));
+    public function index()
+    {
+        $quizzes = Quiz::with(['learningUnit:id,title,roadmap_id', 'questions'])
+            ->withCount('questions')
+            ->paginate(request()->get('per_page', 15));
+        return $this->paginatedResponse($quizzes, 'Quizzes retrieved successfully');
     }
 
-    public function show($id) { return Quiz::with('questions')->findOrFail($id); }
+    public function store(StoreQuizRequest $request)
+    {
+        $quiz = Quiz::create($request->validated());
+        return $this->successResponse($quiz, 'Quiz created successfully', 201);
+    }
 
-    public function update(Request $request, $id) {
+    public function show($id)
+    {
+        $quiz = Quiz::with('questions')->findOrFail($id);
+        return $this->successResponse($quiz);
+    }
+
+    public function update(UpdateQuizRequest $request, $id)
+    {
         $quiz = Quiz::findOrFail($id);
-        $quiz->update($request->all());
-        return $quiz;
+        $quiz->update($request->validated());
+        return $this->successResponse($quiz, 'Quiz updated successfully');
     }
 
-    public function destroy($id) {
+    public function destroy($id)
+    {
         Quiz::findOrFail($id)->delete();
-        return response()->json(['message' => 'Deleted']);
+        return $this->successResponse(null, 'Quiz deleted successfully');
     }
 }

@@ -21,10 +21,7 @@ class EnrollmentController extends Controller
 
         // منع الاشتراك في Roadmap غير مفعل
         if (!$roadmap->is_active) {
-            return response()->json([
-                'success' => false,
-                'message' => 'هذا المسار غير متاح حاليا',
-            ], 403);
+            return $this->errorResponse('هذا المسار غير متاح حاليا', null, 403);
         }
 
         // منع التكرار
@@ -33,12 +30,10 @@ class EnrollmentController extends Controller
             ->first();
 
         if ($existing) {
-            return response()->json([
-                'success' => true,
-                'message' => 'أنت مشترك بالفعل في هذا المسار',
+            return $this->successResponse([
                 'enrollment' => $existing,
                 'chat_room' => $roadmap->chatRoom,
-            ]);
+            ], 'أنت مشترك بالفعل في هذا المسار');
         }
 
         // إنشاء الاشتراك
@@ -50,12 +45,10 @@ class EnrollmentController extends Controller
             'xp_points' => 0,
         ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'تم الاشتراك في المسار بنجاح',
+        return $this->successResponse([
             'enrollment' => $enrollment,
-            'chat_room' => $roadmap->chatRoom, // للـ Community
-        ], Response::HTTP_CREATED);
+            'chat_room' => $roadmap->chatRoom,
+        ], 'تم الاشتراك في المسار بنجاح', 201);
     }
 
     /**
@@ -67,25 +60,19 @@ class EnrollmentController extends Controller
         $user = $request->user();
 
         $enrollments = RoadmapEnrollment::where('user_id', $user->id)
-            ->with('roadmap:id,title,level,is_active') // عدّل الأعمدة حسب جدولك
+            ->with('roadmap:id,title,level,is_active')
             ->orderByDesc('started_at')
-            ->get();
+            ->paginate($request->get('per_page', 15));
 
-        return response()->json([
-            'success' => true,
-            'data' => $enrollments,
-        ]);
+        return $this->paginatedResponse($enrollments, 'Enrollments retrieved successfully');
     }
 
     /**
      * PATCH /api/me/enrollments/{roadmapId}/status
      * تحديث الحالة: active | paused | completed
      */
-    public function updateStatus($roadmapId, Request $request)
+    public function updateStatus($roadmapId, \App\Http\Requests\UpdateEnrollmentStatusRequest $request)
     {
-        $request->validate([
-            'status' => 'required|in:active,paused,completed',
-        ]);
 
         $user = $request->user();
 
@@ -101,11 +88,7 @@ class EnrollmentController extends Controller
 
         $enrollment->save();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'تم تحديث حالة الاشتراك',
-            'data' => $enrollment,
-        ]);
+        return $this->successResponse($enrollment, 'تم تحديث حالة الاشتراك');
     }
     /**
  * DELETE /api/roadmaps/{id}/unenroll
@@ -120,18 +103,12 @@ public function unenroll($id, Request $request)
         ->first();
 
     if (!$enrollment) {
-        return response()->json([
-            'success' => false,
-            'message' => 'أنت غير مشترك في هذا المسار',
-        ], 404);
+        return $this->errorResponse('أنت غير مشترك في هذا المسار', null, 404);
     }
 
     $enrollment->delete();
 
-    return response()->json([
-        'success' => true,
-        'message' => 'تم إلغاء الاشتراك بنجاح',
-    ]);
+    return $this->successResponse(null, 'تم إلغاء الاشتراك بنجاح');
 }
 
 }

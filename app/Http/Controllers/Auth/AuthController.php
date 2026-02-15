@@ -32,12 +32,11 @@ class AuthController extends Controller
         $token = $user->createToken('auth_token')->plainTextToken;
         $user->update(['last_active_at' => now()]);
 
-        return response()->json([
-            'message' => 'تم تسجيل المستخدم بنجاح',
+        return $this->successResponse([
             'user' => $user,
             'token' => $token,
             'token_type' => 'Bearer'
-        ], 201);
+        ], 'تم تسجيل المستخدم بنجاح', 201);
     }
 
     /**
@@ -51,7 +50,7 @@ class AuthController extends Controller
         $credentials = $request->validated();
 
         if (!Auth::attempt($credentials)) {
-            return response()->json(['message' => 'بيانات الدخول غير صحيحة'], 401);
+            return $this->errorResponse('بيانات الدخول غير صحيحة', null, 401);
         }
 
         /** @var User $user */
@@ -59,12 +58,11 @@ class AuthController extends Controller
         $token = $user->createToken('auth_token')->plainTextToken;
         $user->update(['last_active_at' => now()]);
 
-        return response()->json([
-            'message' => 'تم تسجيل الدخول بنجاح',
+        return $this->successResponse([
             'user' => $user,
             'token' => $token,
             'token_type' => 'Bearer'
-        ]);
+        ], 'تم تسجيل الدخول بنجاح');
     }
 
     /**
@@ -79,7 +77,7 @@ class AuthController extends Controller
         $user = $request->user();
         $user->update(['last_active_at' => now()]);
 
-        return response()->json(['user' => $user]);
+        return $this->successResponse($user);
     }
 
     /**
@@ -96,7 +94,7 @@ class AuthController extends Controller
 
         if ($request->has('password')) {
             if (!Hash::check($data['current_password'], $user->password)) {
-                return response()->json(['message' => 'كلمة المرور الحالية غير صحيحة'], 401);
+                return $this->errorResponse('كلمة المرور الحالية غير صحيحة', null, 401);
             }
             $data['password'] = Hash::make($data['password']);
             unset($data['current_password']);
@@ -113,10 +111,7 @@ class AuthController extends Controller
         $user->update($data);
         $user->update(['last_active_at' => now()]);
 
-        return response()->json([
-            'message' => 'تم تحديث الحساب بنجاح',
-            'user' => $user
-        ]);
+        return $this->successResponse($user, 'تم تحديث الحساب بنجاح');
     }
 
     /**
@@ -140,11 +135,10 @@ class AuthController extends Controller
             'last_active_at' => now()
         ]);
 
-        return response()->json([
-            'message' => 'تم تحديث الصورة الشخصية بنجاح',
+        return $this->successResponse([
             'profile_picture_url' => asset('storage/' . $path),
             'user' => $user
-        ]);
+        ], 'تم تحديث الصورة الشخصية بنجاح');
     }
 
     /**
@@ -156,7 +150,7 @@ class AuthController extends Controller
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
-        return response()->json(['message' => 'تم تسجيل الخروج بنجاح']);
+        return $this->successResponse(null, 'تم تسجيل الخروج بنجاح');
     }
 
     /**
@@ -171,7 +165,7 @@ class AuthController extends Controller
         $user = $request->user();
         
         if (!Hash::check($request->password, $user->password)) {
-            return response()->json(['message' => 'كلمة المرور غير صحيحة'], 401);
+            return $this->errorResponse('كلمة المرور غير صحيحة', null, 401);
         }
 
         if ($user->profile_picture && Storage::disk('public')->exists($user->profile_picture)) {
@@ -181,7 +175,7 @@ class AuthController extends Controller
         $user->tokens()->delete();
         $user->delete();
 
-        return response()->json(['message' => 'تم حذف الحساب بنجاح']);
+        return $this->successResponse(null, 'تم حذف الحساب بنجاح');
     }
         /**
      * Delete the authenticated user's profile picture.
@@ -201,16 +195,10 @@ class AuthController extends Controller
                 'last_active_at' => now()
             ]);
 
-            return response()->json([
-                'message' => 'تم حذف الصورة الشخصية بنجاح',
-                'user' => $user
-            ]);
+            return $this->successResponse($user, 'تم حذف الصورة الشخصية بنجاح');
         }
 
-        return response()->json([
-            'message' => 'لا توجد صورة شخصية لحذفها',
-            'user' => $user
-        ], 404);
+        return $this->errorResponse('لا توجد صورة شخصية لحذفها', null, 404);
     }
 
 }

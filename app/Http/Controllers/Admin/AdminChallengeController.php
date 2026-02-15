@@ -15,12 +15,12 @@ class AdminChallengeController extends Controller
         $unit = LearningUnit::findOrFail($unitId);
 
         if ($unit->unit_type !== 'challenge') {
-            return response()->json(['success' => false, 'message' => 'Unit type must be challenge'], 422);
+            return $this->errorResponse('Unit type must be challenge', null, 422);
         }
 
         $challenge = Challenge::where('learning_unit_id', $unitId)->first();
 
-        return response()->json(['success' => true, 'data' => $challenge]);
+        return $this->successResponse($challenge);
     }
 
     // ✅ updateOrCreate because unique(learning_unit_id)
@@ -29,7 +29,7 @@ class AdminChallengeController extends Controller
         $unit = LearningUnit::findOrFail($unitId);
 
         if ($unit->unit_type !== 'challenge') {
-            return response()->json(['success' => false, 'message' => 'Unit type must be challenge'], 422);
+            return $this->errorResponse('Unit type must be challenge', null, 422);
         }
 
         $data = $request->validated();
@@ -39,13 +39,13 @@ class AdminChallengeController extends Controller
             $data
         );
 
-        return response()->json(['success' => true, 'challenge' => $challenge], 201);
+        return $this->successResponse($challenge, 'Challenge created successfully', 201);
     }
 
     public function show(int $challengeId)
     {
         $challenge = Challenge::with('learningUnit')->findOrFail($challengeId);
-        return response()->json(['success' => true, 'challenge' => $challenge]);
+        return $this->successResponse($challenge);
     }
 
     public function update(AdminChallengeRequest $request, int $challengeId)
@@ -53,13 +53,13 @@ class AdminChallengeController extends Controller
         $challenge = Challenge::findOrFail($challengeId);
         $challenge->update($request->validated());
 
-        return response()->json(['success' => true, 'challenge' => $challenge]);
+        return $this->successResponse($challenge);
     }
 
     public function destroy(int $challengeId)
     {
         Challenge::whereKey($challengeId)->delete();
-        return response()->json(['success' => true]);
+        return $this->successResponse(null, 'Challenge deleted successfully');
     }
 
     public function toggleActive(int $challengeId)
@@ -68,6 +68,6 @@ class AdminChallengeController extends Controller
         $challenge->is_active = !$challenge->is_active;
         $challenge->save();
 
-        return response()->json(['success' => true, 'challenge' => $challenge]);
+        return $this->successResponse($challenge);
     }
 }

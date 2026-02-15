@@ -1,0 +1,847 @@
+{
+	"info": {
+		"_postman_id": "roadmap-api-v1",
+		"name": "Roadmap Learning Platform API v1",
+		"description": "Complete API collection for Roadmap Learning Platform",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Test Connection",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/test-connection",
+							"host": ["{{base_url}}"],
+							"path": ["test-connection"]
+						}
+					}
+				},
+				{
+					"name": "Register",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.success && jsonData.data.token) {",
+									"        pm.environment.set('token', jsonData.data.token);",
+									"        pm.environment.set('user_id', jsonData.data.user.id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"testuser\",\n  \"email\": \"test@example.com\",\n  \"password\": \"Test123!@#\",\n  \"password_confirmation\": \"Test123!@#\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/register",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "register"]
+						}
+					}
+				},
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.success && jsonData.data.token) {",
+									"        pm.environment.set('token', jsonData.data.token);",
+									"        pm.environment.set('user_id', jsonData.data.user.id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"Test123!@#\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "login"]
+						}
+					}
+				},
+				{
+					"name": "Get Profile",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/profile",
+							"host": ["{{base_url}}"],
+							"path": ["profile"]
+						}
+					}
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/logout",
+							"host": ["{{base_url}}"],
+							"path": ["logout"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Roadmaps",
+			"item": [
+				{
+					"name": "List Roadmaps",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/roadmaps?per_page=10&page=1",
+							"host": ["{{base_url}}"],
+							"path": ["roadmaps"],
+							"query": [
+								{
+									"key": "per_page",
+									"value": "10"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "level",
+									"value": "beginner",
+									"disabled": true
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Roadmap",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/roadmaps/1",
+							"host": ["{{base_url}}"],
+							"path": ["roadmaps", "1"]
+						}
+					}
+				},
+				{
+					"name": "Search Roadmaps",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/roadmaps/search?query=laravel&limit=10",
+							"host": ["{{base_url}}"],
+							"path": ["roadmaps", "search"],
+							"query": [
+								{
+									"key": "query",
+									"value": "laravel"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Enrollments",
+			"item": [
+				{
+					"name": "Enroll in Roadmap",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/roadmaps/1/enroll",
+							"host": ["{{base_url}}"],
+							"path": ["roadmaps", "1", "enroll"]
+						}
+					}
+				},
+				{
+					"name": "Get My Enrollments",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/me/enrollments?per_page=15",
+							"host": ["{{base_url}}"],
+							"path": ["me", "enrollments"],
+							"query": [
+								{
+									"key": "per_page",
+									"value": "15"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Update Enrollment Status",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"paused\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/me/enrollments/1/status",
+							"host": ["{{base_url}}"],
+							"path": ["me", "enrollments", "1", "status"]
+						}
+					}
+				},
+				{
+					"name": "Unenroll",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/roadmaps/1/unenroll",
+							"host": ["{{base_url}}"],
+							"path": ["roadmaps", "1", "unenroll"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Lessons",
+			"item": [
+				{
+					"name": "Get Learning Units",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/roadmaps/1/units",
+							"host": ["{{base_url}}"],
+							"path": ["roadmaps", "1", "units"]
+						}
+					}
+				},
+				{
+					"name": "Get Lessons",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/units/1/lessons",
+							"host": ["{{base_url}}"],
+							"path": ["units", "1", "lessons"]
+						}
+					}
+				},
+				{
+					"name": "Get Single Lesson",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/lessons/1",
+							"host": ["{{base_url}}"],
+							"path": ["lessons", "1"]
+						}
+					}
+				},
+				{
+					"name": "Get Sub-Lessons",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/lessons/1/sub-lessons",
+							"host": ["{{base_url}}"],
+							"path": ["lessons", "1", "sub-lessons"]
+						}
+					}
+				},
+				{
+					"name": "Get Resources",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/sub-lessons/1/resources",
+							"host": ["{{base_url}}"],
+							"path": ["sub-lessons", "1", "resources"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Lesson Tracking",
+			"item": [
+				{
+					"name": "Open Lesson",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/lessons/1/track/open",
+							"host": ["{{base_url}}"],
+							"path": ["lessons", "1", "track", "open"]
+						}
+					}
+				},
+				{
+					"name": "Complete Lesson",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/lessons/1/track/complete",
+							"host": ["{{base_url}}"],
+							"path": ["lessons", "1", "track", "complete"]
+						}
+					}
+				},
+				{
+					"name": "Get Lesson Tracking",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/lessons/1/track",
+							"host": ["{{base_url}}"],
+							"path": ["lessons", "1", "track"]
+						}
+					}
+				},
+				{
+					"name": "Get My Lesson Trackings",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/me/lessons/tracking?per_page=20",
+							"host": ["{{base_url}}"],
+							"path": ["me", "lessons", "tracking"],
+							"query": [
+								{
+									"key": "per_page",
+									"value": "20"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Lesson Stats",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/me/lessons/stats",
+							"host": ["{{base_url}}"],
+							"path": ["me", "lessons", "stats"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Quizzes",
+			"item": [
+				{
+					"name": "Get Quiz",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/units/1/quizzes",
+							"host": ["{{base_url}}"],
+							"path": ["units", "1", "quizzes"]
+						}
+					}
+				},
+				{
+					"name": "Start Quiz Attempt",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/quizzes/1",
+							"host": ["{{base_url}}"],
+							"path": ["quizzes", "1"]
+						}
+					}
+				},
+				{
+					"name": "Submit Quiz Attempt",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"answers\": {\n    \"1\": \"A\",\n    \"2\": \"B\",\n    \"3\": \"C\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/quiz-attempts/1/submit",
+							"host": ["{{base_url}}"],
+							"path": ["quiz-attempts", "1", "submit"]
+						}
+					}
+				},
+				{
+					"name": "Get Quiz Attempt",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/quiz-attempts/1",
+							"host": ["{{base_url}}"],
+							"path": ["quiz-attempts", "1"]
+						}
+					}
+				},
+				{
+					"name": "Get My Quiz Attempts",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/quizzes/1/my-attempts?per_page=15",
+							"host": ["{{base_url}}"],
+							"path": ["quizzes", "1", "my-attempts"],
+							"query": [
+								{
+									"key": "per_page",
+									"value": "15"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Challenges",
+			"item": [
+				{
+					"name": "Get Challenge",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/units/1/challenges",
+							"host": ["{{base_url}}"],
+							"path": ["units", "1", "challenges"]
+						}
+					}
+				},
+				{
+					"name": "Start Challenge Attempt",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/challenges/1/attempts",
+							"host": ["{{base_url}}"],
+							"path": ["challenges", "1", "attempts"]
+						}
+					}
+				},
+				{
+					"name": "Submit Challenge Attempt",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"code\": \"def reverse_string(s):\\n    return s[::-1]\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/challenge-attempts/1/submit",
+							"host": ["{{base_url}}"],
+							"path": ["challenge-attempts", "1", "submit"]
+						}
+					}
+				},
+				{
+					"name": "Get Challenge Attempt",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/challenge-attempts/1",
+							"host": ["{{base_url}}"],
+							"path": ["challenge-attempts", "1"]
+						}
+					}
+				},
+				{
+					"name": "Get My Challenge Attempts",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/challenges/1/my-attempts?per_page=15",
+							"host": ["{{base_url}}"],
+							"path": ["challenges", "1", "my-attempts"],
+							"query": [
+								{
+									"key": "per_page",
+									"value": "15"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Community",
+			"item": [
+				{
+					"name": "Get My Community Rooms",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/me/community?per_page=15",
+							"host": ["{{base_url}}"],
+							"path": ["me", "community"],
+							"query": [
+								{
+									"key": "per_page",
+									"value": "15"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Admin",
+			"item": [
+				{
+					"name": "Roadmaps",
+					"item": [
+						{
+							"name": "List Roadmaps (Admin)",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{admin_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/admin/roadmaps?per_page=20",
+									"host": ["{{base_url}}"],
+									"path": ["admin", "roadmaps"],
+									"query": [
+										{
+											"key": "per_page",
+											"value": "20"
+										}
+									]
+								}
+							}
+						},
+						{
+							"name": "Create Roadmap",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{admin_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"title\": \"New Roadmap\",\n  \"description\": \"Description here\",\n  \"level\": \"beginner\",\n  \"is_active\": true\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/admin/roadmaps",
+									"host": ["{{base_url}}"],
+									"path": ["admin", "roadmaps"]
+								}
+							}
+						},
+						{
+							"name": "Update Roadmap",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{admin_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"title\": \"Updated Title\",\n  \"description\": \"Updated description\",\n  \"level\": \"intermediate\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/admin/roadmaps/1",
+									"host": ["{{base_url}}"],
+									"path": ["admin", "roadmaps", "1"]
+								}
+							}
+						},
+						{
+							"name": "Delete Roadmap",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{admin_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/admin/roadmaps/1",
+									"host": ["{{base_url}}"],
+									"path": ["admin", "roadmaps", "1"]
+								}
+							}
+						},
+						{
+							"name": "Toggle Roadmap Active",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{admin_token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/admin/roadmaps/1/toggle-active",
+									"host": ["{{base_url}}"],
+									"path": ["admin", "roadmaps", "1", "toggle-active"]
+								}
+							}
+						}
+					]
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost/api/v1",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "admin_token",
+			"value": "",
+			"type": "string"
+		}
+	]
+}
+

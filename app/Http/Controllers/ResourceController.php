@@ -23,7 +23,7 @@ class ResourceController extends Controller
         $resources = Resource::where('sub_lesson_id', $subLessonId)
             ->get(['id', 'title', 'type', 'language', 'link', 'created_at']);
         
-        return response()->json(['data' => $resources]);
+        return $this->successResponse($resources);
     }
 
     /**
@@ -50,7 +50,7 @@ class ResourceController extends Controller
     {
         $resources = Resource::where('sub_lesson_id', $subLessonId)->get();
         
-        return response()->json(['data' => $resources]);
+        return $this->successResponse($resources);
     }
 
     /**
@@ -68,10 +68,7 @@ class ResourceController extends Controller
             'link' => $request->link
         ]);
         
-        return response()->json([
-            'message' => 'تم إنشاء المصدر بنجاح',
-            'data' => $resource
-        ], 201);
+        return $this->successResponse($resource, 'تم إنشاء المصدر بنجاح', 201);
     }
 
     /**
@@ -83,10 +80,7 @@ class ResourceController extends Controller
         $resource = Resource::findOrFail($resourceId);
         $resource->update($request->validated());
         
-        return response()->json([
-            'message' => 'تم تحديث المصدر بنجاح',
-            'data' => $resource
-        ]);
+        return $this->successResponse($resource, 'تم تحديث المصدر بنجاح');
     }
 
     /**
@@ -98,7 +92,7 @@ class ResourceController extends Controller
         $resource = Resource::findOrFail($resourceId);
         $resource->delete();
         
-        return response()->json(['message' => 'تم حذف المصدر بنجاح']);
+        return $this->successResponse(null, 'تم حذف المصدر بنجاح');
     }
 
     /**
@@ -126,8 +120,8 @@ class ResourceController extends Controller
         }
         
         $resources = $query->orderBy('created_at', 'desc')
-            ->paginate($request->per_page ?? 20);
+            ->paginate($request->get('per_page', 20));
         
-        return response()->json(['data' => $resources]);
+        return $this->paginatedResponse($resources, 'Resources retrieved successfully');
     }
 }

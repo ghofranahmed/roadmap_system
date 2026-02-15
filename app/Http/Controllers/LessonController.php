@@ -23,10 +23,11 @@ class LessonController extends Controller
     {
         $lessons = Lesson::where('learning_unit_id', $learningUnitId)
             ->where('is_active', true)
+            ->withCount('subLessons')
             ->orderBy('position')
-            ->get(['id', 'title', 'position', 'description', 'created_at']);
+            ->get(['id', 'title', 'position', 'description', 'created_at', 'learning_unit_id']);
             
-        return response()->json(['data' => $lessons]);
+        return $this->successResponse($lessons);
     }
 
     /**
@@ -57,10 +58,11 @@ class LessonController extends Controller
     public function adminIndex($learningUnitId)
     {
         $lessons = Lesson::where('learning_unit_id', $learningUnitId)
+            ->withCount('subLessons')
             ->orderBy('position')
             ->get();
             
-        return response()->json(['data' => $lessons]);
+        return $this->successResponse($lessons);
     }
 
     /**
@@ -80,10 +82,7 @@ class LessonController extends Controller
             'is_active' => $request->is_active ?? true
         ]);
         
-        return response()->json([
-            'message' => 'تم إنشاء الدرس بنجاح',
-            'data' => $lesson
-        ], 201);
+        return $this->successResponse($lesson, 'تم إنشاء الدرس بنجاح', 201);
     }
 
     /**
@@ -95,22 +94,15 @@ class LessonController extends Controller
         $lesson = Lesson::findOrFail($lessonId);
         $lesson->update($request->validated());
         
-        return response()->json([
-            'message' => 'تم تحديث الدرس بنجاح',
-            'data' => $lesson
-        ]);
+        return $this->successResponse($lesson, 'تم تحديث الدرس بنجاح');
     }
 
     /**
      * إعادة ترتيب الدروس
      * PATCH /admin/learning-units/{learningUnitId}/lessons/reorder
      */
-    public function reorder(Request $request, $learningUnitId)
+    public function reorder(\App\Http\Requests\ReorderLessonsRequest $request, $learningUnitId)
     {
-        $request->validate([
-            'lesson_ids' => 'required|array',
-            'lesson_ids.*' => 'exists:lessons,id,learning_unit_id,' . $learningUnitId
-        ]);
         
         DB::transaction(function () use ($request, $learningUnitId) {
             foreach ($request->lesson_ids as $index => $id) {
@@ -120,7 +112,7 @@ class LessonController extends Controller
             }
         });
         
-        return response()->json(['message' => 'تم إعادة ترتيب الدروس بنجاح']);
+        return $this->successResponse(null, 'تم إعادة ترتيب الدروس بنجاح');
     }
 
     /**
@@ -132,14 +124,11 @@ class LessonController extends Controller
         $lesson = Lesson::findOrFail($lessonId);
         $lesson->update(['is_active' => !$lesson->is_active]);
         
-        return response()->json([
-            'message' => 'تم تحديث حالة الدرس',
-            'data' => [
-                'id' => $lesson->id,
-                'title' => $lesson->title,
-                'is_active' => $lesson->is_active
-            ]
-        ]);
+        return $this->successResponse([
+            'id' => $lesson->id,
+            'title' => $lesson->title,
+            'is_active' => $lesson->is_active
+        ], 'تم تحديث حالة الدرس');
     }
 
     /**
@@ -151,6 +140,6 @@ class LessonController extends Controller
         $lesson = Lesson::findOrFail($lessonId);
         $lesson->delete();
         
-        return response()->json(['message' => 'تم حذف الدرس بنجاح']);
+        return $this->successResponse(null, 'تم حذف الدرس بنجاح');
     }
 }

@@ -18,11 +18,8 @@ class CommunityController extends Controller
             ->where('is_active', true)
             ->with('roadmap:id,title')
             ->orderByDesc('created_at')
-            ->get();
+            ->paginate(request()->get('per_page', 15));
 
-        return response()->json([
-            'success' => true,
-            'data' => $rooms,
-        ]);
+        return $this->paginatedResponse($rooms, 'Community rooms retrieved successfully');
     }
 }

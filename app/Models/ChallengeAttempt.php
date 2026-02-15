@@ -9,8 +9,17 @@ use Illuminate\Database\Eloquent\Model;
  */
 class ChallengeAttempt extends Model
 {
-    protected $fillable = ['challenge_id', 'user_id', 'submitted_code', 'execution_output', 'passed',];
-    protected $casts = ['passed' => 'boolean',];
+    protected $fillable = [
+        'challenge_id',
+        'user_id',
+        'submitted_code',
+        'execution_output',
+        'passed',
+    ];
+
+    protected $casts = [
+        'passed' => 'boolean',
+    ];
 
     public function user()
     {

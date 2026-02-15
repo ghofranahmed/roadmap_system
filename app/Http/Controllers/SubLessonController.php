@@ -22,10 +22,11 @@ class SubLessonController extends Controller
     public function index($lessonId)
     {
         $subLessons = SubLesson::where('lesson_id', $lessonId)
+            ->withCount('resources')
             ->orderBy('position')
-            ->get(['id', 'description', 'position', 'created_at']);
+            ->get(['id', 'description', 'position', 'created_at', 'lesson_id']);
             
-        return response()->json(['data' => $subLessons]);
+        return $this->successResponse($subLessons);
     }
 
     /**
@@ -54,11 +55,13 @@ class SubLessonController extends Controller
     public function adminIndex($lessonId)
     {
         $subLessons = SubLesson::where('lesson_id', $lessonId)
+            ->with(['resources' => function($q) {
+                $q->select('id', 'title', 'type', 'language', 'link', 'sub_lesson_id', 'created_at');
+            }])
             ->orderBy('position')
-            ->with('resources')
             ->get();
             
-        return response()->json(['data' => $subLessons]);
+        return $this->successResponse($subLessons);
     }
 
     /**
@@ -76,10 +79,7 @@ class SubLessonController extends Controller
             'position' => $position
         ]);
         
-        return response()->json([
-            'message' => 'تم إنشاء الدرس الفرعي بنجاح',
-            'data' => $subLesson
-        ], 201);
+        return $this->successResponse($subLesson, 'تم إنشاء الدرس الفرعي بنجاح', 201);
     }
 
     /**
@@ -91,22 +91,15 @@ class SubLessonController extends Controller
         $subLesson = SubLesson::findOrFail($subLessonId);
         $subLesson->update($request->validated());
         
-        return response()->json([
-            'message' => 'تم تحديث الدرس الفرعي بنجاح',
-            'data' => $subLesson
-        ]);
+        return $this->successResponse($subLesson, 'تم تحديث الدرس الفرعي بنجاح');
     }
 
     /**
      * إعادة ترتيب الدروس الفرعية
      * PATCH /admin/lessons/{lessonId}/sub-lessons/reorder
      */
-    public function reorder(Request $request, $lessonId)
+    public function reorder(\App\Http\Requests\ReorderSubLessonsRequest $request, $lessonId)
     {
-        $request->validate([
-            'sublesson_ids' => 'required|array',
-            'sublesson_ids.*' => 'exists:sub_lessons,id,lesson_id,' . $lessonId
-        ]);
         
         DB::transaction(function () use ($request, $lessonId) {
             foreach ($request->sublesson_ids as $index => $id) {
@@ -116,7 +109,7 @@ class SubLessonController extends Controller
             }
         });
         
-        return response()->json(['message' => 'تم إعادة ترتيب الدروس الفرعية بنجاح']);
+        return $this->successResponse(null, 'تم إعادة ترتيب الدروس الفرعية بنجاح');
     }
 
     /**
@@ -128,6 +121,6 @@ class SubLessonController extends Controller
         $subLesson = SubLesson::findOrFail($subLessonId);
         $subLesson->delete();
         
-        return response()->json(['message' => 'تم حذف الدرس الفرعي بنجاح']);
+        return $this->successResponse(null, 'تم حذف الدرس الفرعي بنجاح');
     }
 }

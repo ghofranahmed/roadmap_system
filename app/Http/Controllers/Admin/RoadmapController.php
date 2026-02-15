@@ -55,18 +55,14 @@ class RoadmapController extends Controller
             $perPage = $request->get('per_page', 20);
             $roadmaps = $query->withCount(['enrollments', 'learningUnits'])->paginate($perPage);
             
-            return RoadmapResource::collection($roadmaps)
-                ->additional([
-                    'success' => true,
-                    'message' => 'تم جلب المسارات بنجاح',
-                ]);
+            return $this->paginatedResponse($roadmaps, 'تم جلب المسارات بنجاح');
                 
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'حدث خطأ أثناء جلب المسارات',
-                'error' => config('app.debug') ? $e->getMessage() : null,
-            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+            return $this->errorResponse(
+                'حدث خطأ أثناء جلب المسارات',
+                config('app.debug') ? ['error' => $e->getMessage()] : null,
+                Response::HTTP_INTERNAL_SERVER_ERROR
+            );
         }
     }
     
@@ -89,18 +85,18 @@ class RoadmapController extends Controller
             // مسح الكاش
             Cache::flush();
             
-            return response()->json([
-                'success' => true,
-                'data' => new RoadmapResource($roadmap),
-                'message' => 'تم إنشاء المسار بنجاح',
-            ], Response::HTTP_CREATED);
+            return $this->successResponse(
+                new RoadmapResource($roadmap),
+                'تم إنشاء المسار بنجاح',
+                Response::HTTP_CREATED
+            );
             
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'حدث خطأ أثناء إنشاء المسار',
-                'error' => config('app.debug') ? $e->getMessage() : null,
-            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+            return $this->errorResponse(
+                'حدث خطأ أثناء إنشاء المسار',
+                config('app.debug') ? ['error' => $e->getMessage()] : null,
+                Response::HTTP_INTERNAL_SERVER_ERROR
+            );
         }
     }
     
@@ -112,21 +108,14 @@ class RoadmapController extends Controller
         try {
             $roadmap = Roadmap::withCount(['enrollments', 'learningUnits'])
                 ->with(['chatRoom', 'learningUnits' => function ($q) {
-                    $q->withCount('lessons')->orderBy('order_index');
+                    $q->withCount('lessons')->orderBy('position');
                 }])
                 ->findOrFail($id);
             
-            return response()->json([
-                'success' => true,
-                'data' => new RoadmapResource($roadmap),
-                'message' => 'تم جلب المسار بنجاح',
-            ]);
+            return $this->successResponse(new RoadmapResource($roadmap), 'تم جلب المسار بنجاح');
             
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'المسار غير موجود',
-            ], Response::HTTP_NOT_FOUND);
+            return $this->errorResponse('المسار غير موجود', null, Response::HTTP_NOT_FOUND);
             
         } catch (\Exception $e) {
             return response()->json([
@@ -149,17 +138,10 @@ class RoadmapController extends Controller
             // مسح الكاش
             Cache::flush();
             
-            return response()->json([
-                'success' => true,
-                'data' => new RoadmapResource($roadmap),
-                'message' => 'تم تحديث المسار بنجاح',
-            ]);
+            return $this->successResponse(new RoadmapResource($roadmap), 'تم تحديث المسار بنجاح');
             
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'المسار غير موجود',
-            ], Response::HTTP_NOT_FOUND);
+            return $this->errorResponse('المسار غير موجود', null, Response::HTTP_NOT_FOUND);
             
         } catch (\Exception $e) {
             return response()->json([
@@ -180,10 +162,11 @@ class RoadmapController extends Controller
             
             // التحقق من عدم وجود اشتراكات نشطة
             if ($roadmap->enrollments()->where('status', 'active')->exists()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'لا يمكن حذف المسار لأنه يحتوي على اشتراكات نشطة',
-                ], Response::HTTP_CONFLICT);
+                return $this->errorResponse(
+                    'لا يمكن حذف المسار لأنه يحتوي على اشتراكات نشطة',
+                    null,
+                    Response::HTTP_CONFLICT
+                );
             }
             
             $roadmap->delete();
@@ -191,16 +174,10 @@ class RoadmapController extends Controller
             // مسح الكاش
             Cache::flush();
             
-            return response()->json([
-                'success' => true,
-                'message' => 'تم حذف المسار بنجاح',
-            ]);
+            return $this->successResponse(null, 'تم حذف المسار بنجاح');
             
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'المسار غير موجود',
-            ], Response::HTTP_NOT_FOUND);
+            return $this->errorResponse('المسار غير موجود', null, Response::HTTP_NOT_FOUND);
             
         } catch (\Exception $e) {
             return response()->json([
@@ -228,17 +205,13 @@ class RoadmapController extends Controller
             
             $status = $roadmap->is_active ? 'مفعل' : 'معطل';
             
-            return response()->json([
-                'success' => true,
-                'data' => new RoadmapResource($roadmap),
-                'message' => "تم {$status} المسار بنجاح",
-            ]);
+            return $this->successResponse(
+                new RoadmapResource($roadmap),
+                "تم {$status} المسار بنجاح"
+            );
             
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'المسار غير موجود',
-            ], Response::HTTP_NOT_FOUND);
+            return $this->errorResponse('المسار غير موجود', null, Response::HTTP_NOT_FOUND);
             
         } catch (\Exception $e) {
             return response()->json([
@@ -266,26 +239,19 @@ class RoadmapController extends Controller
                 'learningUnits',
             ])->findOrFail($id);
             
-            return response()->json([
-                'success' => true,
-                'data' => [
-                    'roadmap_id' => $roadmap->id,
-                    'roadmap_title' => $roadmap->title,
-                    'total_enrollments' => $roadmap->enrollments_count,
-                    'active_enrollments' => $roadmap->active_enrollments_count,
-                    'completed_enrollments' => $roadmap->completed_enrollments_count,
-                    'learning_units_count' => $roadmap->learningUnits_count,
-                    'views_count' => $roadmap->views_count ?? 0,
-                    'created_at' => $roadmap->created_at,
-                ],
-                'message' => 'تم جلب الإحصائيات بنجاح',
-            ]);
+            return $this->successResponse([
+                'roadmap_id' => $roadmap->id,
+                'roadmap_title' => $roadmap->title,
+                'total_enrollments' => $roadmap->enrollments_count,
+                'active_enrollments' => $roadmap->active_enrollments_count,
+                'completed_enrollments' => $roadmap->completed_enrollments_count,
+                'learning_units_count' => $roadmap->learningUnits_count,
+                'views_count' => $roadmap->views_count ?? 0,
+                'created_at' => $roadmap->created_at,
+            ], 'تم جلب الإحصائيات بنجاح');
             
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'المسار غير موجود',
-            ], Response::HTTP_NOT_FOUND);
+            return $this->errorResponse('المسار غير موجود', null, Response::HTTP_NOT_FOUND);
             
         } catch (\Exception $e) {
             return response()->json([
