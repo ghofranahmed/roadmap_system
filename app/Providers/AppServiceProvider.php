@@ -2,16 +2,35 @@
 
 namespace App\Providers;
 
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
+
+// Models
+use App\Models\Quiz;
+use App\Models\QuizAttempt;
+use App\Models\Challenge;
+use App\Models\ChallengeAttempt;
+
+// Policies
+use App\Policies\QuizPolicy;
+use App\Policies\QuizAttemptPolicy;
+use App\Policies\ChallengePolicy;
+use App\Policies\ChallengeAttemptPolicy;
+
+use App\Services\Compiler\CompilerServiceInterface;
+use App\Services\Compiler\JdoodleCompilerService;
 
 class AppServiceProvider extends ServiceProvider
 {
     /**
      * Register any application services.
      */
-    public function register(): void
+    public function register()
     {
-        //
+        $this->app->bind(
+            CompilerServiceInterface::class,
+            JdoodleCompilerService::class
+        );
     }
 
     /**
@@ -19,6 +38,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // ربط كل Model بالـ Policy المناسب
+        Gate::policy(Quiz::class, QuizPolicy::class);
+        Gate::policy(QuizAttempt::class, QuizAttemptPolicy::class);
+        Gate::policy(Challenge::class, ChallengePolicy::class);
+        Gate::policy(ChallengeAttempt::class, ChallengeAttemptPolicy::class);
     }
 }

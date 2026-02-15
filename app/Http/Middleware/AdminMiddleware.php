@@ -4,19 +4,30 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 class AdminMiddleware
 {
-    public function handle(Request $request, Closure $next)
+    /**
+     * Handle an incoming request.
+     */
+    public function handle(Request $request, Closure $next): Response
     {
-        if (!$request->user()) {
-            return response()->json(['message' => 'Unauthenticated'], 401);
-        }
+        $user = $request->user();
 
-        if (!$request->user()->is_admin) {
+        // غير مصادق
+        if (!$user) {
             return response()->json([
                 'success' => false,
-                'message' => 'غير مصرح لك بالدخول إلى هذه الصفحة',
+                'message' => 'Unauthenticated.',
+            ], 401);
+        }
+
+        // ليس مسؤولاً
+        if (!$user->is_admin) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized. Admin access required.',
             ], 403);
         }
 
