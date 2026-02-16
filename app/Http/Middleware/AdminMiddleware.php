@@ -23,8 +23,8 @@ class AdminMiddleware
             ], 401);
         }
 
-        // ليس مسؤولاً
-        if (!$user->is_admin) {
+        // ليس مسؤولاً (check role instead of is_admin)
+        if (!in_array($user->role, ['admin', 'tech_admin'])) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized. Admin access required.',

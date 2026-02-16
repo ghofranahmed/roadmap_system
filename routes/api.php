@@ -24,6 +24,7 @@ use App\Http\Controllers\ChallengeController;
 use App\Http\Controllers\Admin\AdminQuizController;
 use App\Http\Controllers\Admin\AdminChallengeController;
 use App\Http\Controllers\Admin\AdminQuizQuestionController;
+use App\Http\Controllers\Admin\AdminUserController;
 
 /*
 |--------------------------------------------------------------------------
@@ -72,6 +73,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::delete('/delete-account', [AuthController::class, 'deleteAccount']);
+    
+    Route::patch('/me/notifications', [AuthController::class, 'updateNotificationPreference']);
 });
 
 /*
@@ -167,7 +170,25 @@ Route::middleware(['auth:sanctum', 'enrolled'])->group(function () {
 | Admin Routes (Full CRUD)
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
+/*
+||--------------------------------------------------------------------------
+|| Admin Routes - User Management (Normal Admin Only)
+||--------------------------------------------------------------------------
+*/
+Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin/users')->group(function () {
+    Route::get('/', [AdminUserController::class, 'index']);
+    Route::get('/{id}', [AdminUserController::class, 'show']);
+    Route::put('/{id}', [AdminUserController::class, 'update']);
+    Route::delete('/{id}', [AdminUserController::class, 'destroy']);
+    Route::post('/{id}/revoke-tokens', [AdminUserController::class, 'revokeTokens']);
+});
+
+/*
+||--------------------------------------------------------------------------
+|| Tech Admin Routes - Content Management (Technical Admin Only)
+||--------------------------------------------------------------------------
+*/
+Route::middleware(['auth:sanctum', 'role:tech_admin'])->prefix('admin')->group(function () {
 
     // Roadmaps Admin
     Route::prefix('roadmaps')->group(function () {

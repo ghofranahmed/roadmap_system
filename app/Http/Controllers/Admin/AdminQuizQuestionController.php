@@ -8,6 +8,22 @@ use Illuminate\Http\Request;
 
 class AdminQuizQuestionController extends Controller
 {
+    /**
+     * Constructor - Defense in depth: ensure only tech_admin role
+     */
+    public function __construct()
+    {
+        $this->middleware(function ($request, $next) {
+            if (!auth()->user() || !auth()->user()->isTechAdmin()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized. Technical admin role required.',
+                ], 403);
+            }
+            return $next($request);
+        });
+    }
+
     public function index($quizId)
     {
         $questions = QuizQuestion::where('quiz_id', $quizId)

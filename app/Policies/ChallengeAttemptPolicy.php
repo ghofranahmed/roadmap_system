@@ -50,7 +50,7 @@ class ChallengeAttemptPolicy
      */
     public function view(User $user, ChallengeAttempt $attempt): bool
     {
-        return $user->is_admin || $user->id === $attempt->user_id;
+        return $user->isTechAdmin() || $user->id === $attempt->user_id;
     }
 
     /**
@@ -74,6 +74,6 @@ class ChallengeAttemptPolicy
      */
     public function delete(User $user, ChallengeAttempt $attempt): bool
     {
-        return $user->is_admin;
+        return $user->isTechAdmin();
     }
 }

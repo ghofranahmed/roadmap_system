@@ -32,6 +32,6 @@ class ChallengePolicy
 
     public function manage(User $user): bool
     {
-        return (bool) $user->is_admin;
+        return $user->isTechAdmin();
     }
 }

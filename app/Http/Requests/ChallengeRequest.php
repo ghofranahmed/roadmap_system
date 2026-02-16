@@ -8,7 +8,7 @@ class ChallengeRequest extends FormRequest
 {
     public function authorize()
     {
-        return $this->user() && $this->user()->is_admin;
+        return $this->user() && $this->user()->isTechAdmin();
     }
 
     public function rules()

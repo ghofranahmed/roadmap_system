@@ -8,7 +8,7 @@ class UpdateQuizQuestionRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user() && $this->user()->is_admin;
+        return $this->user() && $this->user()->isTechAdmin();
     }
 
     public function rules(): array

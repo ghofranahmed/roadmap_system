@@ -26,6 +26,8 @@ class AuthController extends Controller
     {
         $data = $request->validated();
         $data['password'] = Hash::make($data['password']);
+        $data['role'] = 'user'; // Default role
+        $data['is_notifications_enabled'] = true; // Default notification preference
         
         /** @var User $user */
         $user = User::create($data);
@@ -199,6 +201,29 @@ class AuthController extends Controller
         }
 
         return $this->errorResponse('لا توجد صورة شخصية لحذفها', null, 404);
+    }
+
+    /**
+     * Update notification preference
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function updateNotificationPreference(Request $request)
+    {
+        $request->validate([
+            'is_notifications_enabled' => 'required|boolean',
+        ]);
+
+        /** @var User $user */
+        $user = $request->user();
+        $user->update([
+            'is_notifications_enabled' => $request->is_notifications_enabled,
+        ]);
+
+        return $this->successResponse([
+            'is_notifications_enabled' => $user->is_notifications_enabled,
+        ], 'تم تحديث تفضيلات الإشعارات بنجاح');
     }
 
 }

@@ -12,7 +12,7 @@ class QuizAttemptPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->is_admin; // فقط المسؤول يمكنه رؤية قائمة المحاولات (للكويز)
+        return $user->isTechAdmin(); // فقط المسؤول التقني يمكنه رؤية قائمة المحاولات (للكويز)
     }
 
     /**
@@ -20,8 +20,8 @@ class QuizAttemptPolicy
      */
     public function view(User $user, QuizAttempt $attempt): bool
     {
-        // المستخدم يرى محاولاته فقط، أو المسؤول يرى الكل
-        return $user->id === $attempt->user_id || $user->is_admin;
+        // المستخدم يرى محاولاته فقط، أو المسؤول التقني يرى الكل
+        return $user->id === $attempt->user_id || $user->isTechAdmin();
     }
 
     /**
@@ -49,6 +49,6 @@ class QuizAttemptPolicy
      */
     public function delete(User $user, QuizAttempt $attempt): bool
     {
-        return $user->is_admin;
+        return $user->isTechAdmin();
     }
 }

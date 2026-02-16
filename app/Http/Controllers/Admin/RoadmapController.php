@@ -13,12 +13,19 @@ use Illuminate\Support\Facades\Cache;
 class RoadmapController extends Controller
 {
     /**
-     * إنشاء كونستركتور لإضافة middleware
+     * Constructor - Defense in depth: ensure only tech_admin role
      */
     public function __construct()
     {
-        // تطبيق middleware للمسؤولين فقط على جميع الدوال
-        $this->middleware('admin');
+        $this->middleware(function ($request, $next) {
+            if (!auth()->user() || !auth()->user()->isTechAdmin()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized. Technical admin role required.',
+                ], 403);
+            }
+            return $next($request);
+        });
     }
     
     /**

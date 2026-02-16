@@ -56,6 +56,8 @@ class SocialAuthController extends Controller
                         'email' => $email,
                         'password' => bcrypt(Str::random(32)),
                         'email_verified_at' => now(), // Social logins are verified
+                        'role' => 'user', // Default role
+                        'is_notifications_enabled' => true, // Default notification preference
                     ]);
                 }
 
@@ -168,6 +170,8 @@ class SocialAuthController extends Controller
                         'email' => $email,
                         'password' => bcrypt(Str::random(32)),
                         'email_verified_at' => now(), // Social logins are verified
+                        'role' => 'user', // Default role
+                        'is_notifications_enabled' => true, // Default notification preference
                     ]);
                 }
 

@@ -24,6 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Alias for Middlewares
         $middleware->alias([
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
+            'role' => \App\Http\Middleware\RoleMiddleware::class,
             'enrolled' => EnsureUserIsEnrolled::class,
         ]);
 

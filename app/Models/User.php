@@ -18,6 +18,8 @@ class User extends Authenticatable
         'password',
         'profile_picture',
         'last_active_at',
+        'role',
+        'is_notifications_enabled',
         // Removed: google_id, github_id, avatar (use linked_accounts table instead)
     ];
 
@@ -27,10 +29,11 @@ class User extends Authenticatable
     ];
 
     protected $casts = [
-    'email_verified_at' => 'datetime',
-    'password' => 'hashed',
-    'last_active_at' => 'datetime',
-    'is_admin' => 'boolean',
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+        'last_active_at' => 'datetime',
+        'is_admin' => 'boolean',
+        'is_notifications_enabled' => 'boolean',
     ];
     public function enrollments() { 
         return $this->hasMany(RoadmapEnrollment::class); 
@@ -68,9 +71,34 @@ public function hasEnrolled($roadmapId)
     /**
      * دالة مساعدة للتحقق من الصلاحيات (Admin)
      * ستستخدمها في Middleware الأدمن
+     * @deprecated Use role check instead
      */
     public function isAdmin(): bool
     {
-        return (bool) $this->is_admin;
+        return in_array($this->role, ['admin', 'tech_admin']);
+    }
+
+    /**
+     * Check if user has a specific role
+     */
+    public function hasRole(string $role): bool
+    {
+        return $this->role === $role;
+    }
+
+    /**
+     * Check if user is normal admin
+     */
+    public function isNormalAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    /**
+     * Check if user is technical admin
+     */
+    public function isTechAdmin(): bool
+    {
+        return $this->role === 'tech_admin';
     }
 }
