@@ -1,0 +1,393 @@
+{
+	"info": {
+		"_postman_id": "roadmap-api-tech-challenges-oauth",
+		"name": "Roadmap API - Tech Admin: Challenges, OAuth & Notifications",
+		"description": "Technical Admin endpoints for Challenges management, OAuth testing, and Notifications",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://roadmap_system.test/api/v1",
+			"type": "string"
+		},
+		{
+			"key": "render_url",
+			"value": "https://YOUR-APP.onrender.com/api/v1",
+			"type": "string"
+		},
+		{
+			"key": "tech_admin_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "unit_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "challenge_id",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Challenges",
+			"item": [
+				{
+					"name": "List Challenge for Unit",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tech_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/units/{{unit_id}}/challenges",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "units", "{{unit_id}}", "challenges"]
+						}
+					}
+				},
+				{
+					"name": "Create Challenge",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.success && jsonData.data.id) {",
+									"        pm.environment.set('challenge_id', jsonData.data.id);",
+									"    }",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tech_admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Array Sum Challenge\",\n  \"description\": \"Write a function that sums all numbers in an array\",\n  \"min_xp\": 150,\n  \"language\": \"javascript\",\n  \"starter_code\": \"function sumArray(arr) {\\n    // Your code here\\n}\",\n  \"test_cases\": [\n    {\n      \"stdin\": null,\n      \"expected_output\": \"15\"\n    },\n    {\n      \"stdin\": null,\n      \"expected_output\": \"0\"\n    }\n  ],\n  \"is_active\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/units/{{unit_id}}/challenges",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "units", "{{unit_id}}", "challenges"]
+						}
+					}
+				},
+				{
+					"name": "Get Single Challenge",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tech_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/challenges/{{challenge_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "challenges", "{{challenge_id}}"]
+						}
+					}
+				},
+				{
+					"name": "Update Challenge",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tech_admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Updated Challenge Title\",\n  \"min_xp\": 200,\n  \"is_active\": false\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/challenges/{{challenge_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "challenges", "{{challenge_id}}"]
+						}
+					}
+				},
+				{
+					"name": "Toggle Challenge Active",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tech_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/challenges/{{challenge_id}}/toggle-active",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "challenges", "{{challenge_id}}", "toggle-active"]
+						}
+					}
+				},
+				{
+					"name": "Delete Challenge",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tech_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/challenges/{{challenge_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "challenges", "{{challenge_id}}"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "OAuth",
+			"item": [
+				{
+					"name": "Google OAuth Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response contains token\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('token');",
+									"    if (jsonData.token) {",
+									"        pm.environment.set('token', jsonData.token);",
+									"        console.log('Token saved:', jsonData.token);",
+									"    }",
+									"});",
+									"",
+									"pm.test(\"Response contains user.id\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.user).to.have.property('id');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id_token\": \"YOUR_GOOGLE_ID_TOKEN\"\n}"
+						},
+						"url": {
+							"raw": "{{render_url}}/auth/google",
+							"host": ["{{render_url}}"],
+							"path": ["auth", "google"]
+						}
+					}
+				},
+				{
+					"name": "GitHub OAuth Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response contains token\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('token');",
+									"    if (jsonData.token) {",
+									"        pm.environment.set('token', jsonData.token);",
+									"        console.log('Token saved:', jsonData.token);",
+									"    }",
+									"});",
+									"",
+									"pm.test(\"Response contains user.id\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.user).to.have.property('id');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"code\": \"YOUR_GITHUB_OAUTH_CODE\"\n}"
+						},
+						"url": {
+							"raw": "{{render_url}}/auth/github",
+							"host": ["{{render_url}}"],
+							"path": ["auth", "github"]
+						}
+					}
+				},
+				{
+					"name": "Google OAuth - Invalid Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 401 or 422\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id_token\": \"invalid_token\"\n}"
+						},
+						"url": {
+							"raw": "{{render_url}}/auth/google",
+							"host": ["{{render_url}}"],
+							"path": ["auth", "google"]
+						}
+					}
+				},
+				{
+					"name": "GitHub OAuth - Invalid Code",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 401 or 422\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([401, 422]);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"code\": \"invalid_code\"\n}"
+						},
+						"url": {
+							"raw": "{{render_url}}/auth/github",
+							"host": ["{{render_url}}"],
+							"path": ["auth", "github"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Notifications",
+			"item": [
+				{
+					"name": "Update Notification Preference",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response contains notification preference\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data).to.have.property('is_notifications_enabled');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"is_notifications_enabled\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/me/notifications",
+							"host": ["{{base_url}}"],
+							"path": ["me", "notifications"]
+						}
+					}
+				}
+			]
+		}
+	]
+}
+

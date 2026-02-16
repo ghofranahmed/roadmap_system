@@ -1,0 +1,410 @@
+{
+	"info": {
+		"_postman_id": "roadmap-api-tech-resources-quizzes",
+		"name": "Roadmap API - Tech Admin: Resources, Quizzes & Questions",
+		"description": "Technical Admin endpoints for Resources, Quizzes, and Quiz Questions management",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://roadmap_system.test/api/v1",
+			"type": "string"
+		},
+		{
+			"key": "tech_admin_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "sublesson_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "resource_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "quiz_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "question_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "unit_id",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Resources",
+			"item": [
+				{
+					"name": "List Resources for SubLesson",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tech_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/sub-lessons/{{sublesson_id}}/resources",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "sub-lessons", "{{sublesson_id}}", "resources"]
+						}
+					}
+				},
+				{
+					"name": "Create Resource",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.success && jsonData.data.id) {",
+									"        pm.environment.set('resource_id', jsonData.data.id);",
+									"    }",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tech_admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Laravel Routing Documentation\",\n  \"type\": \"article\",\n  \"language\": \"en\",\n  \"link\": \"https://laravel.com/docs/routing\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/sub-lessons/{{sublesson_id}}/resources",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "sub-lessons", "{{sublesson_id}}", "resources"]
+						}
+					}
+				},
+				{
+					"name": "Update Resource",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tech_admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Updated Resource Title\",\n  \"link\": \"https://updated-link.com\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/resources/{{resource_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "resources", "{{resource_id}}"]
+						}
+					}
+				},
+				{
+					"name": "Search Resources",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tech_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/resources/search?query=laravel&type=article",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "resources", "search"],
+							"query": [
+								{
+									"key": "query",
+									"value": "laravel"
+								},
+								{
+									"key": "type",
+									"value": "article"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete Resource",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tech_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/resources/{{resource_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "resources", "{{resource_id}}"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Quizzes",
+			"item": [
+				{
+					"name": "List All Quizzes",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tech_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/quizzes?per_page=15",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "quizzes"],
+							"query": [
+								{
+									"key": "per_page",
+									"value": "15"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Create Quiz",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.success && jsonData.data.id) {",
+									"        pm.environment.set('quiz_id', jsonData.data.id);",
+									"    }",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tech_admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"learning_unit_id\": {{unit_id}},\n  \"min_xp\": 50,\n  \"max_xp\": 100,\n  \"is_active\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/quizzes",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "quizzes"]
+						}
+					}
+				},
+				{
+					"name": "Get Single Quiz",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tech_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/quizzes/{{quiz_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "quizzes", "{{quiz_id}}"]
+						}
+					}
+				},
+				{
+					"name": "Update Quiz",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tech_admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"min_xp\": 60,\n  \"max_xp\": 120,\n  \"is_active\": false\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/quizzes/{{quiz_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "quizzes", "{{quiz_id}}"]
+						}
+					}
+				},
+				{
+					"name": "Delete Quiz",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tech_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/quizzes/{{quiz_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "quizzes", "{{quiz_id}}"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Quiz Questions",
+			"item": [
+				{
+					"name": "List Questions for Quiz",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tech_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/quizzes/{{quiz_id}}/questions",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "quizzes", "{{quiz_id}}", "questions"]
+						}
+					}
+				},
+				{
+					"name": "Create Quiz Question",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.success && jsonData.data.id) {",
+									"        pm.environment.set('question_id', jsonData.data.id);",
+									"    }",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tech_admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"question_text\": \"What is the default database driver in Laravel?\",\n  \"options\": [\"MySQL\", \"PostgreSQL\", \"SQLite\", \"MongoDB\"],\n  \"correct_answer\": \"SQLite\",\n  \"question_xp\": 15,\n  \"order\": 1\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/quizzes/{{quiz_id}}/questions",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "quizzes", "{{quiz_id}}", "questions"]
+						}
+					}
+				},
+				{
+					"name": "Update Quiz Question",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tech_admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"question_text\": \"Updated question text\",\n  \"correct_answer\": \"PostgreSQL\",\n  \"question_xp\": 20\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/questions/{{question_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "questions", "{{question_id}}"]
+						}
+					}
+				},
+				{
+					"name": "Delete Quiz Question",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tech_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/questions/{{question_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "questions", "{{question_id}}"]
+						}
+					}
+				}
+			]
+		}
+	]
+}
+

@@ -1,0 +1,323 @@
+{
+	"info": {
+		"_postman_id": "roadmap-api-tech-roadmaps-units",
+		"name": "Roadmap API - Tech Admin: Roadmaps & Units",
+		"description": "Technical Admin endpoints for Roadmaps and Learning Units management",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://roadmap_system.test/api/v1",
+			"type": "string"
+		},
+		{
+			"key": "tech_admin_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "roadmap_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "unit_id",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Roadmaps",
+			"item": [
+				{
+					"name": "List Roadmaps",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tech_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/roadmaps?per_page=20",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "roadmaps"],
+							"query": [
+								{
+									"key": "per_page",
+									"value": "20"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Create Roadmap",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.success && jsonData.data.id) {",
+									"        pm.environment.set('roadmap_id', jsonData.data.id);",
+									"        console.log('Roadmap ID saved:', jsonData.data.id);",
+									"    }",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tech_admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Laravel Advanced Backend\",\n  \"description\": \"Complete guide to Laravel backend development\",\n  \"level\": \"intermediate\",\n  \"is_active\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/roadmaps",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "roadmaps"]
+						}
+					}
+				},
+				{
+					"name": "Update Roadmap",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tech_admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Updated Roadmap Title\",\n  \"description\": \"Updated description\",\n  \"level\": \"advanced\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/roadmaps/{{roadmap_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "roadmaps", "{{roadmap_id}}"]
+						}
+					}
+				},
+				{
+					"name": "Toggle Roadmap Active",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tech_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/roadmaps/{{roadmap_id}}/toggle-active",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "roadmaps", "{{roadmap_id}}", "toggle-active"]
+						}
+					}
+				},
+				{
+					"name": "Delete Roadmap",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tech_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/roadmaps/{{roadmap_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "roadmaps", "{{roadmap_id}}"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Learning Units",
+			"item": [
+				{
+					"name": "List Units for Roadmap",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tech_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/roadmaps/{{roadmap_id}}/units",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "roadmaps", "{{roadmap_id}}", "units"]
+						}
+					}
+				},
+				{
+					"name": "Create Learning Unit",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.success && jsonData.data.id) {",
+									"        pm.environment.set('unit_id', jsonData.data.id);",
+									"    }",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tech_admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Advanced Routing\",\n  \"position\": 2\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/roadmaps/{{roadmap_id}}/units",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "roadmaps", "{{roadmap_id}}", "units"]
+						}
+					}
+				},
+				{
+					"name": "Update Learning Unit",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tech_admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Updated Unit Title\",\n  \"position\": 3\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/units/{{unit_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "units", "{{unit_id}}"]
+						}
+					}
+				},
+				{
+					"name": "Reorder Learning Units",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tech_admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"unit_ids\": [3, 1, 2, 4]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/roadmaps/{{roadmap_id}}/units/reorder",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "roadmaps", "{{roadmap_id}}", "units", "reorder"]
+						}
+					}
+				},
+				{
+					"name": "Toggle Unit Active",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tech_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/units/{{unit_id}}/toggle-active",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "units", "{{unit_id}}", "toggle-active"]
+						}
+					}
+				},
+				{
+					"name": "Delete Learning Unit",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tech_admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/units/{{unit_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "units", "{{unit_id}}"]
+						}
+					}
+				}
+			]
+		}
+	]
+}
+
