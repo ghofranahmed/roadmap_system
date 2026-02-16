@@ -54,8 +54,8 @@ Route::prefix('auth')->group(function () {
     Route::post('/reset-password', [PasswordResetController::class, 'resetPassword'])->middleware('throttle:3,1');
     Route::get('/reset-attempts', [PasswordResetController::class, 'getAttemptsRemaining']);
 
-    // Route::post('/google', [SocialAuthController::class, 'google']);
-    // Route::post('/github', [SocialAuthController::class, 'github']);
+    Route::post('/google', [SocialAuthController::class, 'google'])->middleware('throttle:5,1');
+    Route::post('/github', [SocialAuthController::class, 'github'])->middleware('throttle:5,1');
 });
 
 /*

@@ -1,16 +1,16 @@
 <?php
 
 namespace App\Http\Controllers\Auth;
-/*
+
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\LinkedAccount;
-use Carbon\Carbon;
 use Google\Client as GoogleClient;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
+
 class SocialAuthController extends Controller
 {
     public function google(Request $request)
@@ -19,8 +19,7 @@ class SocialAuthController extends Controller
             'id_token' => 'required|string',
         ]);
 
-        $client = new GoogleClient();
-
+        $client = new GoogleClient(['client_id' => config('services.google.client_id')]);
         $payload = $client->verifyIdToken($request->id_token);
 
         if (!$payload) {
@@ -28,15 +27,16 @@ class SocialAuthController extends Controller
         }
 
         $googleId = $payload['sub'] ?? null;
-        $email    = $payload['email'] ?? null;
-        $name     = $payload['name'] ?? 'User';
+        $email = $payload['email'] ?? null;
+        $name = $payload['name'] ?? 'User';
+        $avatar = $payload['picture'] ?? null;
 
         if (!$googleId || !$email) {
             return response()->json(['status' => 'error', 'message' => 'Google token missing required data'], 422);
         }
 
-        $token = DB::transaction(function () use ($googleId, $email, $name) {
-
+        $token = DB::transaction(function () use ($googleId, $email, $name, $avatar) {
+            // Check if this Google account is already linked
             $linked = LinkedAccount::where('provider', 'google')
                 ->where('provider_user_id', $googleId)
                 ->first();
@@ -44,23 +44,35 @@ class SocialAuthController extends Controller
             if ($linked) {
                 $user = $linked->user;
             } else {
+                // Find or create user by email
                 $user = User::where('email', $email)->first();
 
                 if (!$user) {
+                    // Generate username from email or name
+                    $username = $this->generateUsername($email, $name);
+                    
                     $user = User::create([
-                        'name' => $name,
+                        'username' => $username,
                         'email' => $email,
                         'password' => bcrypt(Str::random(32)),
-                        // لو عندك email_verified_at:
-                        // 'email_verified_at' => now(),
+                        'email_verified_at' => now(), // Social logins are verified
                     ]);
                 }
 
-                LinkedAccount::create([
-                    'user_id' => $user->id,
-                    'provider' => 'google',
-                    'provider_user_id' => $googleId,
-                ]);
+                // Check if user already has this provider linked
+                $existingLink = LinkedAccount::where('user_id', $user->id)
+                    ->where('provider', 'google')
+                    ->first();
+
+                if (!$existingLink) {
+                    LinkedAccount::create([
+                        'user_id' => $user->id,
+                        'provider' => 'google',
+                        'provider_user_id' => $googleId,
+                        'provider_email' => $email,
+                        'avatar_url' => $avatar,
+                    ]);
+                }
             }
 
             return $user->createToken('google-mobile')->plainTextToken;
@@ -69,7 +81,11 @@ class SocialAuthController extends Controller
         return response()->json([
             'status' => 'success',
             'token' => $token,
-            'user' => ['email' => $email, 'name' => $name],
+            'user' => [
+                'id' => $user->id,
+                'username' => $user->username,
+                'email' => $user->email,
+            ],
         ], 200);
     }
 
@@ -111,6 +127,7 @@ class SocialAuthController extends Controller
         $githubId = $githubUser['id'] ?? null;
         $email = $githubUser['email'] ?? null;
         $name = $githubUser['name'] ?? $githubUser['login'] ?? 'User';
+        $avatar = $githubUser['avatar_url'] ?? null;
 
         // If email is not public, get it from emails endpoint
         if (!$email) {
@@ -130,7 +147,8 @@ class SocialAuthController extends Controller
             return response()->json(['status' => 'error', 'message' => 'GitHub account missing required data'], 422);
         }
 
-        $token = DB::transaction(function () use ($githubId, $email, $name) {
+        $token = DB::transaction(function () use ($githubId, $email, $name, $avatar) {
+            // Check if this GitHub account is already linked
             $linked = LinkedAccount::where('provider', 'github')
                 ->where('provider_user_id', $githubId)
                 ->first();
@@ -138,22 +156,35 @@ class SocialAuthController extends Controller
             if ($linked) {
                 $user = $linked->user;
             } else {
+                // Find or create user by email
                 $user = User::where('email', $email)->first();
 
                 if (!$user) {
+                    // Generate username from email or name
+                    $username = $this->generateUsername($email, $name);
+                    
                     $user = User::create([
-                        'name' => $name,
+                        'username' => $username,
                         'email' => $email,
                         'password' => bcrypt(Str::random(32)),
-                        // 'email_verified_at' => now(),
+                        'email_verified_at' => now(), // Social logins are verified
                     ]);
                 }
 
-                LinkedAccount::create([
-                    'user_id' => $user->id,
-                    'provider' => 'github',
-                    'provider_user_id' => $githubId,
-                ]);
+                // Check if user already has this provider linked
+                $existingLink = LinkedAccount::where('user_id', $user->id)
+                    ->where('provider', 'github')
+                    ->first();
+
+                if (!$existingLink) {
+                    LinkedAccount::create([
+                        'user_id' => $user->id,
+                        'provider' => 'github',
+                        'provider_user_id' => $githubId,
+                        'provider_email' => $email,
+                        'avatar_url' => $avatar,
+                    ]);
+                }
             }
 
             return $user->createToken('github-mobile')->plainTextToken;
@@ -162,8 +193,44 @@ class SocialAuthController extends Controller
         return response()->json([
             'status' => 'success',
             'token' => $token,
-            'user' => ['email' => $email, 'name' => $name],
+            'user' => [
+                'id' => $user->id,
+                'username' => $user->username,
+                'email' => $user->email,
+            ],
         ], 200);
     }
+
+    /**
+     * Generate a unique username from email or name
+     */
+    private function generateUsername(string $email, string $name): string
+    {
+        // Try to use name first
+        if ($name && $name !== 'User') {
+            $baseUsername = Str::slug($name);
+            $username = $baseUsername;
+            $counter = 1;
+            
+            while (User::where('username', $username)->exists()) {
+                $username = $baseUsername . $counter;
+                $counter++;
+            }
+            
+            return $username;
+        }
+        
+        // Fallback to email prefix
+        $emailPrefix = explode('@', $email)[0];
+        $baseUsername = Str::slug($emailPrefix);
+        $username = $baseUsername;
+        $counter = 1;
+        
+        while (User::where('username', $username)->exists()) {
+            $username = $baseUsername . $counter;
+            $counter++;
+        }
+        
+        return $username;
+    }
 }
-    */

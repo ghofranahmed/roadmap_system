@@ -18,9 +18,7 @@ class User extends Authenticatable
         'password',
         'profile_picture',
         'last_active_at',
-         'google_id', // أضف
-        'github_id', // أضف
-        'avatar',
+        // Removed: google_id, github_id, avatar (use linked_accounts table instead)
     ];
 
     protected $hidden = [
@@ -53,7 +51,7 @@ class User extends Authenticatable
         return $this->hasMany(LessonTracking::class); 
         }
     public function linkedAccounts() { 
-        return $this->hasOne(LinkedAccount::class);
+        return $this->hasMany(LinkedAccount::class);
          }
      public function settings()
 {

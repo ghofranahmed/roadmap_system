@@ -13,15 +13,25 @@ return new class extends Migration
     {
 
     Schema::create('linked_accounts', function (Blueprint $table) {
-        $table->id(); // معرف الحساب المرتبط
-        $table->foreignId('user_id')->constrained('users')->cascadeOnDelete(); // علاقة بالمستخدم
-        $table->string('provider'); // اسم الخدمة (google, github, facebook...)
-        $table->string('provider_user_id'); // المعرف الفريد للمستخدم في الخدمة الخارجية
-        $table->string('access_token')->nullable(); // التوكن للوصول
-        $table->string('refresh_token')->nullable(); // التوكن لتجديد الوصول
+        $table->id();
+        $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
+        $table->string('provider'); // google, github, etc.
+        $table->string('provider_user_id'); // Provider's user ID
+        $table->text('access_token')->nullable(); // Changed to text for longer tokens
+        $table->text('refresh_token')->nullable(); // Changed to text for longer tokens
         $table->timestamp('expires_at')->nullable();
-        $table->unique(['provider', 'provider_user_id']); // وقت انتهاء التوكن
-        $table->timestamps(); // created_at و updated_at
+        $table->string('provider_email')->nullable(); // Store provider email
+        $table->string('avatar_url')->nullable(); // Store provider avatar
+        $table->timestamps();
+        
+        // Unique: same provider + provider_user_id can only exist once
+        $table->unique(['provider', 'provider_user_id']);
+        
+        // Unique: same user can't link same provider twice
+        $table->unique(['user_id', 'provider']);
+        
+        // Index for faster user lookups
+        $table->index('user_id');
     });
     }
 
