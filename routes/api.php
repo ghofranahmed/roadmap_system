@@ -25,6 +25,8 @@ use App\Http\Controllers\Admin\AdminQuizController;
 use App\Http\Controllers\Admin\AdminChallengeController;
 use App\Http\Controllers\Admin\AdminQuizQuestionController;
 use App\Http\Controllers\Admin\AdminUserController;
+use App\Http\Controllers\Admin\AdminChatModerationController;
+use App\Http\Controllers\ChatMessageController;
 
 /*
 |--------------------------------------------------------------------------
@@ -167,13 +169,29 @@ Route::middleware(['auth:sanctum', 'enrolled'])->group(function () {
 
 /*
 |--------------------------------------------------------------------------
+| Chat Messages (Authenticated users)
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth:sanctum')->group(function () {
+    // List & send messages (roadmap-scoped)
+    Route::get('/roadmaps/{roadmapId}/chat/messages', [ChatMessageController::class, 'index']);
+    Route::post('/roadmaps/{roadmapId}/chat/messages', [ChatMessageController::class, 'store']);
+
+    // Edit & delete messages (message-scoped)
+    Route::patch('/chat/messages/{messageId}', [ChatMessageController::class, 'update']);
+    Route::delete('/chat/messages/{messageId}', [ChatMessageController::class, 'destroy']);
+});
+
+/*
+|--------------------------------------------------------------------------
 | Admin Routes (Full CRUD)
 |--------------------------------------------------------------------------
 */
+
 /*
-||--------------------------------------------------------------------------
-|| Admin Routes - User Management (Normal Admin Only)
-||--------------------------------------------------------------------------
+|--------------------------------------------------------------------------
+| Admin Routes - User Management (Normal Admin Only)
+|--------------------------------------------------------------------------
 */
 Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin/users')->group(function () {
     Route::get('/', [AdminUserController::class, 'index']);
@@ -184,9 +202,22 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin/users')->group(
 });
 
 /*
-||--------------------------------------------------------------------------
-|| Tech Admin Routes - Content Management (Technical Admin Only)
-||--------------------------------------------------------------------------
+|--------------------------------------------------------------------------
+| Admin Chat Moderation (Admin or Tech Admin)
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
+    Route::post('/roadmaps/{roadmapId}/chat/mute', [AdminChatModerationController::class, 'mute']);
+    Route::post('/roadmaps/{roadmapId}/chat/unmute', [AdminChatModerationController::class, 'unmute']);
+    Route::post('/roadmaps/{roadmapId}/chat/ban', [AdminChatModerationController::class, 'ban']);
+    Route::post('/roadmaps/{roadmapId}/chat/unban', [AdminChatModerationController::class, 'unban']);
+    Route::get('/roadmaps/{roadmapId}/chat/members', [AdminChatModerationController::class, 'members']);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Tech Admin Routes - Content Management (Technical Admin Only)
+|--------------------------------------------------------------------------
 */
 Route::middleware(['auth:sanctum', 'role:tech_admin'])->prefix('admin')->group(function () {
 
