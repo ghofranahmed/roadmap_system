@@ -1,0 +1,595 @@
+{
+	"info": {
+		"_postman_id": "roadmap-api-chat-system",
+		"name": "Roadmap API - Chat System",
+		"description": "Chat system endpoints: Messages (list, send, edit, delete) and Admin Moderation (mute, unmute, ban, unban, members)",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://roadmap_system.test/api/v1",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "admin_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "roadmap_id",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "message_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "target_user_id",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Chat Messages (User)",
+			"item": [
+				{
+					"name": "List Messages",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has data array', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData.data).to.be.an('array');",
+									"});",
+									"",
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.data && jsonData.data.length > 0) {",
+									"        pm.collectionVariables.set('message_id', jsonData.data[0].id);",
+									"    }",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/roadmaps/{{roadmap_id}}/chat/messages?per_page=30",
+							"host": ["{{base_url}}"],
+							"path": ["roadmaps", "{{roadmap_id}}", "chat", "messages"],
+							"query": [
+								{
+									"key": "per_page",
+									"value": "30"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Send Message",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 201', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('Message created with content', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData.data).to.have.property('id');",
+									"    pm.expect(jsonData.data).to.have.property('content');",
+									"});",
+									"",
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set('message_id', jsonData.data.id);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"content\": \"Hello everyone! Excited to learn together.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/roadmaps/{{roadmap_id}}/chat/messages",
+							"host": ["{{base_url}}"],
+							"path": ["roadmaps", "{{roadmap_id}}", "chat", "messages"]
+						}
+					}
+				},
+				{
+					"name": "Edit Message",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Message updated with edited_at', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData.data.edited_at).to.not.be.null;",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"content\": \"Hello everyone! (edited) Excited to learn together.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/chat/messages/{{message_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["chat", "messages", "{{message_id}}"]
+						}
+					}
+				},
+				{
+					"name": "Delete Message",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Message deleted', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/chat/messages/{{message_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["chat", "messages", "{{message_id}}"]
+						}
+					}
+				},
+				{
+					"name": "Send Message - Not Enrolled (403)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 403 or 404', function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([403, 404]);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"content\": \"Should fail\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/roadmaps/99999/chat/messages",
+							"host": ["{{base_url}}"],
+							"path": ["roadmaps", "99999", "chat", "messages"]
+						}
+					}
+				},
+				{
+					"name": "Send Message - Empty Content (422)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 422', function () {",
+									"    pm.response.to.have.status(422);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"content\": \"\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/roadmaps/{{roadmap_id}}/chat/messages",
+							"host": ["{{base_url}}"],
+							"path": ["roadmaps", "{{roadmap_id}}", "chat", "messages"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Admin Chat Moderation",
+			"item": [
+				{
+					"name": "Mute User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('User muted', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData.data.type).to.eql('mute');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"user_id\": {{target_user_id}},\n  \"reason\": \"Spamming the chat\",\n  \"muted_until\": \"2026-03-01T00:00:00Z\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/roadmaps/{{roadmap_id}}/chat/mute",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "roadmaps", "{{roadmap_id}}", "chat", "mute"]
+						}
+					}
+				},
+				{
+					"name": "Unmute User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"user_id\": {{target_user_id}}\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/roadmaps/{{roadmap_id}}/chat/unmute",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "roadmaps", "{{roadmap_id}}", "chat", "unmute"]
+						}
+					}
+				},
+				{
+					"name": "Ban User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('User banned', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData.data.type).to.eql('ban');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"user_id\": {{target_user_id}},\n  \"reason\": \"Inappropriate behavior\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/roadmaps/{{roadmap_id}}/chat/ban",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "roadmaps", "{{roadmap_id}}", "chat", "ban"]
+						}
+					}
+				},
+				{
+					"name": "Unban User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"user_id\": {{target_user_id}}\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/roadmaps/{{roadmap_id}}/chat/unban",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "roadmaps", "{{roadmap_id}}", "chat", "unban"]
+						}
+					}
+				},
+				{
+					"name": "List Chat Members",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response contains members', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData.data).to.be.an('array');",
+									"});",
+									"",
+									"pm.test('Members have moderation status', function () {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.data.length > 0) {",
+									"        pm.expect(jsonData.data[0]).to.have.property('is_muted');",
+									"        pm.expect(jsonData.data[0]).to.have.property('is_banned');",
+									"    }",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/roadmaps/{{roadmap_id}}/chat/members?per_page=30",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "roadmaps", "{{roadmap_id}}", "chat", "members"],
+							"query": [
+								{
+									"key": "per_page",
+									"value": "30"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Mute User - Non-Admin (403)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 403', function () {",
+									"    pm.response.to.have.status(403);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"user_id\": {{target_user_id}},\n  \"reason\": \"Should fail\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/roadmaps/{{roadmap_id}}/chat/mute",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "roadmaps", "{{roadmap_id}}", "chat", "mute"]
+						}
+					}
+				}
+			]
+		}
+	]
+}
+
