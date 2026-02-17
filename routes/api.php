@@ -27,6 +27,8 @@ use App\Http\Controllers\Admin\AdminQuizQuestionController;
 use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Admin\AdminChatModerationController;
 use App\Http\Controllers\Admin\AdminAnnouncementController;
+use App\Http\Controllers\Admin\ReadOnly\AdminRoadmapReadController;
+use App\Http\Controllers\Admin\ReadOnly\AdminContentReadController;
 use App\Http\Controllers\ChatMessageController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\NotificationController;
@@ -207,40 +209,32 @@ Route::middleware('auth:sanctum')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| Admin Routes (Full CRUD)
+| Admin Routes — Normal Admin Only (role:admin)
 |--------------------------------------------------------------------------
+| User management, announcements, and chat moderation.
+| These endpoints are EXCLUSIVELY for the normal admin role.
 */
+Route::middleware(['auth:sanctum', 'role:admin'])
+    ->prefix('admin')
+    ->group(function () {
 
-/*
-|--------------------------------------------------------------------------
-| Admin Routes - User Management (Normal Admin Only)
-|--------------------------------------------------------------------------
-*/
-Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin/users')->group(function () {
-    Route::get('/', [AdminUserController::class, 'index']);
-    Route::get('/{id}', [AdminUserController::class, 'show']);
-    Route::put('/{id}', [AdminUserController::class, 'update']);
-    Route::delete('/{id}', [AdminUserController::class, 'destroy']);
-    Route::post('/{id}/revoke-tokens', [AdminUserController::class, 'revokeTokens']);
-});
+    // ─── A) User Management (admin only) ────────────────────────
+    Route::prefix('users')->group(function () {
+        Route::get('/', [AdminUserController::class, 'index']);
+        Route::get('/{id}', [AdminUserController::class, 'show']);
+        Route::put('/{id}', [AdminUserController::class, 'update']);
+        Route::delete('/{id}', [AdminUserController::class, 'destroy']);
+        Route::post('/{id}/revoke-tokens', [AdminUserController::class, 'revokeTokens']);
+    });
 
-/*
-|--------------------------------------------------------------------------
-| Admin Announcements (Admin or Tech Admin)
-|--------------------------------------------------------------------------
-*/
-Route::middleware(['auth:sanctum', 'admin'])->prefix('admin/announcements')->group(function () {
-    Route::get('/', [AdminAnnouncementController::class, 'index']);
-    Route::post('/', [AdminAnnouncementController::class, 'store']);
-    Route::get('/{id}', [AdminAnnouncementController::class, 'show']);
-});
+    // ─── B) Announcements Management (admin only) ───────────────
+    Route::prefix('announcements')->group(function () {
+        Route::get('/', [AdminAnnouncementController::class, 'index']);
+        Route::post('/', [AdminAnnouncementController::class, 'store']);
+        Route::get('/{id}', [AdminAnnouncementController::class, 'show']);
+    });
 
-/*
-|--------------------------------------------------------------------------
-| Admin Chat Moderation (Admin or Tech Admin)
-|--------------------------------------------------------------------------
-*/
-Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
+    // ─── C) Chat Moderation (admin only) ────────────────────────
     Route::post('/roadmaps/{roadmapId}/chat/mute', [AdminChatModerationController::class, 'mute']);
     Route::post('/roadmaps/{roadmapId}/chat/unmute', [AdminChatModerationController::class, 'unmute']);
     Route::post('/roadmaps/{roadmapId}/chat/ban', [AdminChatModerationController::class, 'ban']);
@@ -250,70 +244,94 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
 
 /*
 |--------------------------------------------------------------------------
-| Tech Admin Routes - Content Management (Technical Admin Only)
+| Admin Routes — Shared READ-ONLY Content (role:admin,tech_admin)
 |--------------------------------------------------------------------------
+| Both admin and tech_admin can read content in the admin panel.
+| List + show ONLY — no create / update / delete.
 */
-Route::middleware(['auth:sanctum', 'role:tech_admin'])->prefix('admin')->group(function () {
+Route::middleware(['auth:sanctum', 'role:admin,tech_admin'])
+    ->prefix('admin')
+    ->group(function () {
 
-    // Roadmaps Admin
-    Route::prefix('roadmaps')->group(function () {
-        Route::get('/', [AdminRoadmapController::class, 'index']);
-        Route::post('/', [AdminRoadmapController::class, 'store']);
-        Route::put('/{id}', [AdminRoadmapController::class, 'update']);
-        Route::delete('/{id}', [AdminRoadmapController::class, 'destroy']);
-        Route::patch('/{id}/toggle-active', [AdminRoadmapController::class, 'toggleActive']);
-    });
+    Route::get('/roadmaps', [AdminRoadmapReadController::class, 'index']);
+    Route::get('/roadmaps/{id}', [AdminRoadmapReadController::class, 'show']);
 
-    // Learning Units Admin
-    Route::get('/roadmaps/{roadmapId}/units', [LearningUnitController::class, 'adminIndex']);
+    Route::get('/roadmaps/{roadmapId}/units', [AdminContentReadController::class, 'unitsIndex']);
+    Route::get('/units/{unitId}', [AdminContentReadController::class, 'unitShow']);
+
+    Route::get('/units/{unitId}/lessons', [AdminContentReadController::class, 'lessonsIndex']);
+    Route::get('/lessons/{lessonId}', [AdminContentReadController::class, 'lessonShow']);
+
+    Route::get('/lessons/{lessonId}/sub-lessons', [AdminContentReadController::class, 'subLessonsIndex']);
+    Route::get('/sub-lessons/{subLessonId}', [AdminContentReadController::class, 'subLessonShow']);
+
+    Route::get('/sub-lessons/{subLessonId}/resources', [AdminContentReadController::class, 'resourcesIndex']);
+    Route::get('/resources/{resourceId}', [AdminContentReadController::class, 'resourceShow']);
+
+    Route::get('/resources/search', [ResourceController::class, 'search']);
+
+    Route::get('/units/{unitId}/quizzes', [AdminContentReadController::class, 'quizzesIndex']);
+    Route::get('/quizzes/{quizId}', [AdminContentReadController::class, 'quizShow']);
+    Route::get('/quizzes/{quizId}/questions', [AdminQuizQuestionController::class, 'index']);
+
+    Route::get('/units/{unitId}/challenges', [AdminContentReadController::class, 'challengesIndex']);
+    Route::get('/challenges/{challengeId}', [AdminContentReadController::class, 'challengeShow']);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Admin Routes — Tech Admin Only (role:tech_admin)
+|--------------------------------------------------------------------------
+| Full content CRUD (write operations). NO access to user management.
+| GET routes are handled by the shared read group above.
+*/
+Route::middleware(['auth:sanctum', 'role:tech_admin'])
+    ->prefix('admin')
+    ->group(function () {
+
+    // ─── Roadmaps (create / update / delete / toggle) ───────────
+    Route::post('/roadmaps', [AdminRoadmapController::class, 'store']);
+    Route::put('/roadmaps/{id}', [AdminRoadmapController::class, 'update']);
+    Route::delete('/roadmaps/{id}', [AdminRoadmapController::class, 'destroy']);
+    Route::patch('/roadmaps/{id}/toggle-active', [AdminRoadmapController::class, 'toggleActive']);
+
+    // ─── Learning Units (create / update / delete / reorder / toggle) ──
     Route::post('/roadmaps/{roadmapId}/units', [LearningUnitController::class, 'store']);
     Route::put('/units/{unitId}', [LearningUnitController::class, 'update']);
     Route::delete('/units/{unitId}', [LearningUnitController::class, 'destroy']);
     Route::patch('/roadmaps/{roadmapId}/units/reorder', [LearningUnitController::class, 'reorder']);
     Route::patch('/units/{unitId}/toggle-active', [LearningUnitController::class, 'toggleActive']);
 
-    // Lessons Admin
-    Route::get('/units/{unitId}/lessons', [LessonController::class, 'adminIndex']);
+    // ─── Lessons (create / update / delete / reorder / toggle) ──
     Route::post('/units/{unitId}/lessons', [LessonController::class, 'store']);
     Route::put('/lessons/{lessonId}', [LessonController::class, 'update']);
     Route::delete('/lessons/{lessonId}', [LessonController::class, 'destroy']);
     Route::patch('/units/{unitId}/lessons/reorder', [LessonController::class, 'reorder']);
     Route::patch('/lessons/{lessonId}/toggle-active', [LessonController::class, 'toggleActive']);
 
-    // SubLessons Admin
-    Route::get('/lessons/{lessonId}/sub-lessons', [SubLessonController::class, 'adminIndex']);
+    // ─── SubLessons (create / update / delete / reorder) ────────
     Route::post('/lessons/{lessonId}/sub-lessons', [SubLessonController::class, 'store']);
     Route::put('/sub-lessons/{subLessonId}', [SubLessonController::class, 'update']);
     Route::delete('/sub-lessons/{subLessonId}', [SubLessonController::class, 'destroy']);
     Route::patch('/lessons/{lessonId}/sub-lessons/reorder', [SubLessonController::class, 'reorder']);
 
-    // Resources Admin
-    Route::get('/sub-lessons/{subLessonId}/resources', [ResourceController::class, 'adminIndex']);
+    // ─── Resources (create / update / delete) ───────────────────
     Route::post('/sub-lessons/{subLessonId}/resources', [ResourceController::class, 'store']);
     Route::put('/resources/{resourceId}', [ResourceController::class, 'update']);
     Route::delete('/resources/{resourceId}', [ResourceController::class, 'destroy']);
-    Route::get('/resources/search', [ResourceController::class, 'search']);
 
-    /*
-    |--------------------------------------------------------------------------
-    | Admin: Quiz + Questions + Challenge
-    |--------------------------------------------------------------------------
-    */
+    // ─── Quizzes (create / update / delete) ─────────────────────
+    Route::post('/quizzes', [AdminQuizController::class, 'store']);
+    Route::put('/quizzes/{quiz}', [AdminQuizController::class, 'update']);
+    Route::delete('/quizzes/{quiz}', [AdminQuizController::class, 'destroy']);
 
-    // Quizzes
-    Route::apiResource('quizzes', AdminQuizController::class);
+    // ─── Quiz Questions (create / update / delete) ──────────────
+    Route::post('/quizzes/{quizId}/questions', [AdminQuizQuestionController::class, 'store']);
+    Route::put('/questions/{questionId}', [AdminQuizQuestionController::class, 'update']);
+    Route::delete('/questions/{questionId}', [AdminQuizQuestionController::class, 'destroy']);
 
-    // Quiz Questions
-    Route::get('quizzes/{quizId}/questions', [AdminQuizQuestionController::class, 'index']);
-    Route::post('quizzes/{quizId}/questions', [AdminQuizQuestionController::class, 'store']);
-    Route::put('questions/{questionId}', [AdminQuizQuestionController::class, 'update']);
-    Route::delete('questions/{questionId}', [AdminQuizQuestionController::class, 'destroy']);
-
-    // Challenges (under unit)
-    Route::get('/units/{unitId}/challenges', [AdminChallengeController::class, 'index']);
+    // ─── Challenges (create / update / delete / toggle) ─────────
     Route::post('/units/{unitId}/challenges', [AdminChallengeController::class, 'store']);
-
-    Route::get('/challenges/{challengeId}', [AdminChallengeController::class, 'show']);
     Route::put('/challenges/{challengeId}', [AdminChallengeController::class, 'update']);
     Route::delete('/challenges/{challengeId}', [AdminChallengeController::class, 'destroy']);
     Route::patch('/challenges/{challengeId}/toggle-active', [AdminChallengeController::class, 'toggleActive']);

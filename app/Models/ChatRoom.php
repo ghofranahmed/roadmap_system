@@ -16,11 +16,6 @@ class ChatRoom extends Model
         'is_active' => 'boolean',
     ];
 
-<<<<<<< Current (Your changes)
-    /* ───── Relationships ───── */
-
-=======
->>>>>>> Incoming (Background Agent changes)
     public function messages()
     {
         return $this->hasMany(ChatMessage::class);
