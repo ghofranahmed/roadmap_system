@@ -58,7 +58,10 @@ class AuthController extends Controller
         /** @var User $user */
         $user = Auth::user();
         $token = $user->createToken('auth_token')->plainTextToken;
-        $user->update(['last_active_at' => now()]);
+        $user->update([
+            'last_active_at' => now(),
+            'last_login_at' => now(),
+        ]);
 
         return $this->successResponse([
             'user' => $user,

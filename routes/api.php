@@ -26,7 +26,10 @@ use App\Http\Controllers\Admin\AdminChallengeController;
 use App\Http\Controllers\Admin\AdminQuizQuestionController;
 use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Admin\AdminChatModerationController;
+use App\Http\Controllers\Admin\AdminAnnouncementController;
 use App\Http\Controllers\ChatMessageController;
+use App\Http\Controllers\AnnouncementController;
+use App\Http\Controllers\NotificationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -184,6 +187,26 @@ Route::middleware('auth:sanctum')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
+| Announcements (Authenticated users)
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/announcements', [AnnouncementController::class, 'index']);
+    Route::get('/announcements/technical', [AnnouncementController::class, 'technical']);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Notifications (Authenticated users)
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+});
+
+/*
+|--------------------------------------------------------------------------
 | Admin Routes (Full CRUD)
 |--------------------------------------------------------------------------
 */
@@ -199,6 +222,17 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin/users')->group(
     Route::put('/{id}', [AdminUserController::class, 'update']);
     Route::delete('/{id}', [AdminUserController::class, 'destroy']);
     Route::post('/{id}/revoke-tokens', [AdminUserController::class, 'revokeTokens']);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Admin Announcements (Admin or Tech Admin)
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth:sanctum', 'admin'])->prefix('admin/announcements')->group(function () {
+    Route::get('/', [AdminAnnouncementController::class, 'index']);
+    Route::post('/', [AdminAnnouncementController::class, 'store']);
+    Route::get('/{id}', [AdminAnnouncementController::class, 'show']);
 });
 
 /*

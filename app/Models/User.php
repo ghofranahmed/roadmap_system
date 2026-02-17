@@ -18,6 +18,7 @@ class User extends Authenticatable
         'password',
         'profile_picture',
         'last_active_at',
+        'last_login_at',
         'role',
         'is_notifications_enabled',
         // Removed: google_id, github_id, avatar (use linked_accounts table instead)
@@ -32,6 +33,7 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
         'last_active_at' => 'datetime',
+        'last_login_at' => 'datetime',
         'is_admin' => 'boolean',
         'is_notifications_enabled' => 'boolean',
     ];
@@ -100,5 +102,18 @@ public function hasEnrolled($roadmapId)
     public function isTechAdmin(): bool
     {
         return $this->role === 'tech_admin';
+    }
+
+    /**
+     * Check if user is any kind of admin (admin or tech_admin)
+     */
+    public function isAnyAdmin(): bool
+    {
+        return in_array($this->role, ['admin', 'tech_admin']);
+    }
+
+    public function announcements()
+    {
+        return $this->hasMany(Announcement::class, 'created_by');
     }
 }
