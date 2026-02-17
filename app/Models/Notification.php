@@ -15,7 +15,6 @@ class Notification extends Model
         'is_active',
         'scheduled_at',
         'read_at',
-        'announcement_id',
     ];
 
     protected $casts = [
@@ -29,11 +28,6 @@ class Notification extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
-    }
-
-    public function announcement()
-    {
-        return $this->belongsTo(Announcement::class);
     }
 
     // ─── Scopes ───

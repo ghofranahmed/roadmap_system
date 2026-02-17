@@ -13,10 +13,7 @@ Artisan::command('inspire', function () {
 | Scheduled Commands
 |--------------------------------------------------------------------------
 |
-| Announcements: Publish scheduled announcements every minute.
-|   php artisan announcements:publish-due
-|
-| Reminders: Send motivational reminders daily at 9:00 AM.
+| Reminders: Send motivational reminders daily at 10:00 AM.
 |   php artisan reminders:send
 |
 | To activate the scheduler, add to your server crontab:
@@ -27,5 +24,4 @@ Artisan::command('inspire', function () {
 |
 */
 
-Schedule::command('announcements:publish-due')->everyMinute();
-Schedule::command('reminders:send')->dailyAt('09:00');
+Schedule::command('reminders:send')->dailyAt('10:00');

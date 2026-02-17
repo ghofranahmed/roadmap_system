@@ -5,11 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreAnnouncementRequest;
 use App\Models\Announcement;
-use App\Models\Notification;
-use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class AdminAnnouncementController extends Controller
 {
@@ -38,38 +35,15 @@ class AdminAnnouncementController extends Controller
     }
 
     /**
-     * Create a new announcement.
+     * Create a new announcement (simple board post).
      * POST /admin/announcements
      */
     public function store(StoreAnnouncementRequest $request): JsonResponse
     {
         $data = $request->validated();
-
-        // Determine status based on publish_at
-        if (empty($data['publish_at'])) {
-            // Publish immediately
-            $data['status'] = 'published';
-            $data['publish_at'] = now();
-        } elseif (isset($data['status']) && $data['status'] === 'draft') {
-            // Keep as draft
-            $data['status'] = 'draft';
-        } else {
-            // Future date → scheduled
-            $data['status'] = 'scheduled';
-        }
-
         $data['created_by'] = $request->user()->id;
 
-        $announcement = DB::transaction(function () use ($data) {
-            $announcement = Announcement::create($data);
-
-            // If published immediately, send notifications to target users
-            if ($announcement->status === 'published') {
-                $this->sendNotificationsToTargetUsers($announcement);
-            }
-
-            return $announcement;
-        });
+        $announcement = Announcement::create($data);
 
         return $this->successResponse(
             $announcement->load('creator:id,username,email'),
@@ -79,116 +53,29 @@ class AdminAnnouncementController extends Controller
     }
 
     /**
-     * Send notifications to targeted users for a published announcement.
+     * Update an existing announcement.
+     * PUT /admin/announcements/{id}
      */
-    public static function sendNotificationsToTargetUsers(Announcement $announcement): void
+    public function update(StoreAnnouncementRequest $request, int $id): JsonResponse
     {
-        $userIds = self::resolveTargetUserIds($announcement);
+        $announcement = Announcement::findOrFail($id);
+        $announcement->update($request->validated());
 
-        if (empty($userIds)) {
-            return;
-        }
-
-        $notifications = [];
-        $now = now();
-
-        foreach ($userIds as $userId) {
-            $notifications[] = [
-                'user_id'         => $userId,
-                'title'           => $announcement->title,
-                'message'         => $announcement->content,
-                'type'            => 'announcement',
-                'announcement_id' => $announcement->id,
-                'is_active'       => true,
-                'read_at'         => null,
-                'created_at'      => $now,
-                'updated_at'      => $now,
-            ];
-        }
-
-        // Bulk insert in chunks for performance
-        foreach (array_chunk($notifications, 500) as $chunk) {
-            Notification::insert($chunk);
-        }
+        return $this->successResponse(
+            $announcement->load('creator:id,username,email'),
+            'Announcement updated successfully'
+        );
     }
 
     /**
-     * Resolve user IDs based on target_type and target_rules.
+     * Delete an announcement.
+     * DELETE /admin/announcements/{id}
      */
-    public static function resolveTargetUserIds(Announcement $announcement): array
+    public function destroy(int $id): JsonResponse
     {
-        $rules = $announcement->target_rules ?? [];
+        $announcement = Announcement::findOrFail($id);
+        $announcement->delete();
 
-        return match ($announcement->target_type) {
-            'all' => User::where('role', 'user')
-                         ->where('is_notifications_enabled', true)
-                         ->pluck('id')
-                         ->toArray(),
-
-            'specific_users' => User::whereIn('id', $rules['user_ids'] ?? [])
-                                    ->where('is_notifications_enabled', true)
-                                    ->pluck('id')
-                                    ->toArray(),
-
-            'inactive_users' => self::getInactiveUserIds($rules),
-
-            'low_progress' => self::getLowProgressUserIds($rules),
-
-            default => [],
-        };
-    }
-
-    /**
-     * Get users who haven't logged in for X days.
-     */
-    private static function getInactiveUserIds(array $rules): array
-    {
-        $days = $rules['inactive_days'] ?? 7;
-
-        return User::where('role', 'user')
-            ->where('is_notifications_enabled', true)
-            ->where(function ($q) use ($days) {
-                $q->where('last_login_at', '<=', now()->subDays($days))
-                  ->orWhereNull('last_login_at');
-            })
-            ->pluck('id')
-            ->toArray();
-    }
-
-    /**
-     * Get users with low progress (enrolled but progress <= max_progress%).
-     */
-    private static function getLowProgressUserIds(array $rules): array
-    {
-        $maxProgress = $rules['max_progress'] ?? 20;
-
-        // Find users who are enrolled and have low lesson completion rate
-        return User::where('role', 'user')
-            ->where('is_notifications_enabled', true)
-            ->whereHas('enrollments', function ($q) {
-                $q->where('status', 'active');
-            })
-            ->get()
-            ->filter(function (User $user) use ($maxProgress) {
-                $totalLessons = DB::table('lesson_trackings')
-                    ->where('user_id', $user->id)
-                    ->count();
-
-                if ($totalLessons === 0) {
-                    return true; // No progress at all
-                }
-
-                $completedLessons = DB::table('lesson_trackings')
-                    ->where('user_id', $user->id)
-                    ->where('is_complete', true)
-                    ->count();
-
-                $progressPercent = ($completedLessons / $totalLessons) * 100;
-
-                return $progressPercent <= $maxProgress;
-            })
-            ->pluck('id')
-            ->toArray();
+        return $this->successResponse(null, 'Announcement deleted successfully');
     }
 }
-

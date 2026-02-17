@@ -11,7 +11,6 @@ use App\Http\Controllers\Admin\RoadmapController as AdminRoadmapController;
 
 use App\Http\Controllers\EnrollmentController;
 use App\Http\Controllers\CommunityController;
-
 use App\Http\Controllers\LearningUnitController;
 use App\Http\Controllers\LessonController;
 use App\Http\Controllers\SubLessonController;
@@ -189,12 +188,13 @@ Route::middleware('auth:sanctum')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| Announcements (Authenticated users)
+| Announcements (Authenticated users — Events Board)
 |--------------------------------------------------------------------------
 */
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/announcements', [AnnouncementController::class, 'index']);
     Route::get('/announcements/technical', [AnnouncementController::class, 'technical']);
+    Route::get('/announcements/opportunities', [AnnouncementController::class, 'opportunities']);
 });
 
 /*
@@ -232,6 +232,8 @@ Route::middleware(['auth:sanctum', 'role:admin'])
         Route::get('/', [AdminAnnouncementController::class, 'index']);
         Route::post('/', [AdminAnnouncementController::class, 'store']);
         Route::get('/{id}', [AdminAnnouncementController::class, 'show']);
+        Route::put('/{id}', [AdminAnnouncementController::class, 'update']);
+        Route::delete('/{id}', [AdminAnnouncementController::class, 'destroy']);
     });
 
     // ─── C) Chat Moderation (admin only) ────────────────────────

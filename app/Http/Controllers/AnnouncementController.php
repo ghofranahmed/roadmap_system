@@ -9,38 +9,46 @@ use Illuminate\Http\Request;
 class AnnouncementController extends Controller
 {
     /**
-     * List published announcements relevant to the authenticated user.
+     * List all active announcements (board view for users).
      * GET /announcements
      */
     public function index(Request $request): JsonResponse
     {
-        $user = $request->user();
-
-        $announcements = Announcement::published()
-            ->relevantTo($user)
-            ->select(['id', 'title', 'content', 'type', 'target_type', 'publish_at', 'created_at'])
-            ->orderByDesc('publish_at')
+        $announcements = Announcement::active()
+            ->select(['id', 'title', 'description', 'type', 'link', 'starts_at', 'ends_at', 'created_at'])
+            ->orderByDesc('created_at')
             ->paginate($request->get('per_page', 15));
 
         return $this->paginatedResponse($announcements, 'Announcements retrieved successfully');
     }
 
     /**
-     * List published technical announcements for the authenticated user.
+     * List active technical announcements.
      * GET /announcements/technical
      */
     public function technical(Request $request): JsonResponse
     {
-        $user = $request->user();
-
-        $announcements = Announcement::published()
+        $announcements = Announcement::active()
             ->ofType('technical')
-            ->relevantTo($user)
-            ->select(['id', 'title', 'content', 'type', 'target_type', 'publish_at', 'created_at'])
-            ->orderByDesc('publish_at')
+            ->select(['id', 'title', 'description', 'type', 'link', 'starts_at', 'ends_at', 'created_at'])
+            ->orderByDesc('created_at')
             ->paginate($request->get('per_page', 15));
 
         return $this->paginatedResponse($announcements, 'Technical announcements retrieved successfully');
     }
-}
 
+    /**
+     * List active opportunity announcements.
+     * GET /announcements/opportunities
+     */
+    public function opportunities(Request $request): JsonResponse
+    {
+        $announcements = Announcement::active()
+            ->ofType('opportunity')
+            ->select(['id', 'title', 'description', 'type', 'link', 'starts_at', 'ends_at', 'created_at'])
+            ->orderByDesc('created_at')
+            ->paginate($request->get('per_page', 15));
+
+        return $this->paginatedResponse($announcements, 'Opportunity announcements retrieved successfully');
+    }
+}
