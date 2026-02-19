@@ -22,6 +22,11 @@ use App\Policies\ChatMessagePolicy;
 use App\Services\Compiler\CompilerServiceInterface;
 use App\Services\Compiler\JdoodleCompilerService;
 
+use App\Services\Chatbot\LLMProviderInterface;
+use App\Services\Chatbot\DummyProvider;
+use App\Services\Chatbot\GeminiProvider;
+use App\Services\Chatbot\GroqProvider;
+
 class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -33,6 +38,15 @@ class AppServiceProvider extends ServiceProvider
             CompilerServiceInterface::class,
             JdoodleCompilerService::class
         );
+
+        // Chatbot LLM provider (config-driven via CHATBOT_PROVIDER env)
+        $this->app->singleton(LLMProviderInterface::class, function () {
+            return match (config('services.chatbot.provider')) {
+                'gemini' => new GeminiProvider(),
+                'groq'   => new GroqProvider(),
+                default  => new DummyProvider(),
+            };
+        });
     }
 
     /**

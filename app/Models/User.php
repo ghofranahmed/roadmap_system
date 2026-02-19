@@ -116,4 +116,9 @@ public function hasEnrolled($roadmapId)
     {
         return $this->hasMany(Announcement::class, 'created_by');
     }
+
+    public function chatbotSessions()
+    {
+        return $this->hasMany(ChatbotSession::class);
+    }
 }

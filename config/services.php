@@ -47,4 +47,19 @@ return [
         'redirect' => env('GITHUB_REDIRECT_URI'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Smart Teacher Chatbot
+    |--------------------------------------------------------------------------
+    */
+    'chatbot' => [
+        'provider'             => env('CHATBOT_PROVIDER', 'dummy'),
+        'gemini_key'           => env('GEMINI_API_KEY'),
+        'gemini_model'         => env('GEMINI_MODEL', 'gemini-2.0-flash'),
+        'groq_key'             => env('GROQ_API_KEY'),
+        'groq_model'           => env('GROQ_MODEL', 'llama-3.3-70b-versatile'),
+        'max_context_messages' => 10,
+        'request_timeout'      => 15,
+    ],
+
 ];

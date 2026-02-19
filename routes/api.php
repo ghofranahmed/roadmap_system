@@ -31,6 +31,7 @@ use App\Http\Controllers\Admin\ReadOnly\AdminContentReadController;
 use App\Http\Controllers\ChatMessageController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\ChatbotController;
 
 /*
 |--------------------------------------------------------------------------
@@ -205,6 +206,22 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Smart Teacher Chatbot (Authenticated users)
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth:sanctum')->prefix('chatbot')->group(function () {
+    Route::get('/sessions',                [ChatbotController::class, 'index']);
+    Route::post('/sessions',               [ChatbotController::class, 'store']);
+    Route::get('/sessions/{id}/messages',  [ChatbotController::class, 'show']);
+    Route::post('/sessions/{id}/messages', [ChatbotController::class, 'storeMessage'])
+         ->middleware('throttle:15,1');
+    Route::delete('/sessions/{id}',        [ChatbotController::class, 'destroy']);
+    Route::post('/messages',               [ChatbotController::class, 'sendMessage'])
+         ->middleware('throttle:15,1');
 });
 
 /*
