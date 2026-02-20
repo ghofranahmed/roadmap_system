@@ -65,7 +65,12 @@ Route::prefix('auth')->group(function () {
     Route::post('/google', [SocialAuthController::class, 'google'])->middleware('throttle:5,1');
     Route::post('/github', [SocialAuthController::class, 'github'])->middleware('throttle:5,1');
 });
-
+Route::get('/auth/github/callback', function (\Illuminate\Http\Request $request) {
+    return response()->json([
+        'code' => $request->query('code'),
+        'state' => $request->query('state'),
+    ]);
+});
 /*
 |--------------------------------------------------------------------------
 | Protected Routes (All authenticated users)

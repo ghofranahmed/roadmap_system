@@ -97,28 +97,57 @@ class SocialAuthController extends Controller
             'code' => 'required|string',
         ]);
 
-        // Exchange code for access token
-        $response = Http::asForm()->post('https://github.com/login/oauth/access_token', [
-            'client_id' => config('services.github.client_id'),
-            'client_secret' => config('services.github.client_secret'),
-            'code' => $request->code,
-        ]);
+        // Safety check: ensure GitHub OAuth is configured
+        $clientId = config('services.github.client_id');
+        $clientSecret = config('services.github.client_secret');
+        $redirectUri = config('services.github.redirect');
+
+        if (!$clientId || !$clientSecret || !$redirectUri) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'GitHub OAuth not configured. Please set GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, and GITHUB_REDIRECT_URI in your environment.',
+            ], 500);
+        }
+
+        // Exchange code for access token (JSON response, with redirect_uri)
+        $response = Http::asForm()
+            ->withHeaders(['Accept' => 'application/json'])
+            ->post('https://github.com/login/oauth/access_token', [
+                'client_id' => $clientId,
+                'client_secret' => $clientSecret,
+                'code' => $request->code,
+                'redirect_uri' => $redirectUri,
+            ]);
 
         if ($response->failed()) {
-            return response()->json(['status' => 'error', 'message' => 'Failed to exchange code for token'], 401);
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to exchange code for token',
+                'debug' => $response->json() ?: $response->body(),
+            ], 401);
         }
 
-        $data = [];
-        parse_str($response->body(), $data);
+        $tokenData = $response->json();
 
-        if (!isset($data['access_token'])) {
-            return response()->json(['status' => 'error', 'message' => 'Invalid GitHub code'], 401);
+        if (empty($tokenData['access_token'])) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'GitHub did not return an access token. The code may be expired or invalid.',
+                'debug' => $tokenData,
+            ], 401);
         }
 
-        $accessToken = $data['access_token'];
+        $accessToken = $tokenData['access_token'];
+
+        $githubHeaders = [
+            'Accept' => 'application/vnd.github+json',
+            'User-Agent' => config('app.name', 'Laravel-App'),
+        ];
 
         // Get user info from GitHub
-        $userResponse = Http::withToken($accessToken)->get('https://api.github.com/user');
+        $userResponse = Http::withToken($accessToken)
+            ->withHeaders($githubHeaders)
+            ->get('https://api.github.com/user');
 
         if ($userResponse->failed()) {
             return response()->json(['status' => 'error', 'message' => 'Failed to fetch user info from GitHub'], 401);
@@ -133,7 +162,10 @@ class SocialAuthController extends Controller
 
         // If email is not public, get it from emails endpoint
         if (!$email) {
-            $emailsResponse = Http::withToken($accessToken)->get('https://api.github.com/user/emails');
+            $emailsResponse = Http::withToken($accessToken)
+                ->withHeaders($githubHeaders)
+                ->get('https://api.github.com/user/emails');
+
             if ($emailsResponse->successful()) {
                 $emails = $emailsResponse->json();
                 foreach ($emails as $emailData) {
@@ -149,7 +181,8 @@ class SocialAuthController extends Controller
             return response()->json(['status' => 'error', 'message' => 'GitHub account missing required data'], 422);
         }
 
-        $token = DB::transaction(function () use ($githubId, $email, $name, $avatar) {
+        // Transaction returns both token and user so they are available outside
+        $result = DB::transaction(function () use ($githubId, $email, $name, $avatar) {
             // Check if this GitHub account is already linked
             $linked = LinkedAccount::where('provider', 'github')
                 ->where('provider_user_id', $githubId)
@@ -164,7 +197,7 @@ class SocialAuthController extends Controller
                 if (!$user) {
                     // Generate username from email or name
                     $username = $this->generateUsername($email, $name);
-                    
+
                     $user = User::create([
                         'username' => $username,
                         'email' => $email,
@@ -191,16 +224,19 @@ class SocialAuthController extends Controller
                 }
             }
 
-            return $user->createToken('github-mobile')->plainTextToken;
+            return [
+                'token' => $user->createToken('github-mobile')->plainTextToken,
+                'user' => $user,
+            ];
         });
 
         return response()->json([
             'status' => 'success',
-            'token' => $token,
+            'token' => $result['token'],
             'user' => [
-                'id' => $user->id,
-                'username' => $user->username,
-                'email' => $user->email,
+                'id' => $result['user']->id,
+                'username' => $result['user']->username,
+                'email' => $result['user']->email,
             ],
         ], 200);
     }
