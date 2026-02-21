@@ -4,15 +4,28 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class UpdateLessonRequest extends StoreLessonRequest
+class UpdateLessonRequest extends FormRequest
 {
+    public function authorize()
+    {
+        return true;
+    }
+
     public function rules()
     {
         return [
-            'title' => 'sometimes|string|max:255',
+            'title'       => 'sometimes|string|max:255',
             'description' => 'nullable|string',
-            'position' => 'sometimes|integer|min:1',
-            'is_active' => 'sometimes|boolean'
+            'position'    => 'prohibited',
+            'is_active'   => 'sometimes|boolean',
+        ];
+    }
+
+    public function messages()
+    {
+        return [
+            'title.max'           => 'عنوان الدرس يجب ألا يتجاوز 255 حرفاً',
+            'position.prohibited' => 'لا يمكن تعديل ترتيب الدرس من هنا، استخدم endpoint إعادة الترتيب',
         ];
     }
 }

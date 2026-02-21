@@ -10,20 +10,20 @@ class UpdateSubLessonRequest extends FormRequest
     {
         return true;
     }
-    
+
     public function rules()
     {
         return [
             'description' => 'sometimes|string',
-            'position' => 'sometimes|integer|min:1'
+            'position'    => 'prohibited',
         ];
     }
-    
+
     public function messages()
     {
         return [
-            'description.string' => 'الوصف يجب أن يكون نصاً',
-            'position.min' => 'الترتيب يجب أن يكون على الأقل 1'
+            'description.string'  => 'الوصف يجب أن يكون نصاً',
+            'position.prohibited' => 'لا يمكن تعديل ترتيب الدرس الفرعي من هنا، استخدم reorder',
         ];
     }
 }

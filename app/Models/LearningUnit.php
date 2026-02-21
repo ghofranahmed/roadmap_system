@@ -6,7 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class LearningUnit extends Model
 {   use HasFactory;
-    protected $fillable = [ 'roadmap_id', 'title', 'position' ]; 
+    protected $fillable = ['roadmap_id', 'title', 'position', 'is_active', 'unit_type'];
+
+    protected $casts = [
+        'is_active' => 'boolean',
+    ]; 
     public function roadmap() { 
       return $this->belongsTo(Roadmap::class); 
       } 

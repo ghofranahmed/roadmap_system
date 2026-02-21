@@ -14,19 +14,20 @@ class ReorderUnitsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            // يجب أن تكون مصفوفة ومطلوبة
-            'unit_ids' => 'required|array|min:1',
-            
-            // كل عنصر داخل المصفوفة يجب أن يكون رقم صحيح وموجود في جدول learning_units
-            'unit_ids.*' => 'required|integer|exists:learning_units,id',
+            'unit_id' => 'required|integer|exists:learning_units,id',
+            'new_position' => 'required|integer|min:1',
         ];
     }
 
-    public function messages()
+    public function messages(): array
     {
         return [
-            'unit_ids.required' => 'قائمة الوحدات مطلوبة.',
-            'unit_ids.*.exists' => 'إحدى الوحدات المرسلة غير موجودة في النظام.',
+            'unit_id.required' => 'معرّف الوحدة مطلوب.',
+            'unit_id.integer' => 'معرّف الوحدة يجب أن يكون رقمًا صحيحًا.',
+            'unit_id.exists' => 'الوحدة المحددة غير موجودة.',
+            'new_position.required' => 'الموقع الجديد مطلوب.',
+            'new_position.integer' => 'الموقع الجديد يجب أن يكون رقمًا صحيحًا.',
+            'new_position.min' => 'الموقع الجديد يجب أن يكون 1 على الأقل.',
         ];
     }
 }

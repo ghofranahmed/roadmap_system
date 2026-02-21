@@ -3,11 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ReorderUnitsRequest;
+use App\Http\Requests\StoreLearningUnitRequest;
 use App\Models\LearningUnit;
 use App\Models\Roadmap;
-use App\Http\Requests\StoreLearningUnitRequest;
 use Illuminate\Support\Facades\DB;
-use App\Http\Requests\ReorderUnitsRequest;
 
 
 class LearningUnitController extends Controller
@@ -71,10 +71,14 @@ class LearningUnitController extends Controller
     public function update(StoreLearningUnitRequest $request, $unitId)
     {
         $unit = LearningUnit::findOrFail($unitId);
-        
-        $unit->update($request->validated());
 
-        return $this->successResponse($unit, 'Unit updated successfully');
+        $data = $request->validated();
+        unset($data['position']); // position changes only via reorder endpoint
+
+        $unit->update($data);
+        $unit->refresh();
+
+        return $this->successResponse($unit, 'تم تحديث الوحدة بنجاح');
     }
 
     public function destroy($unitId)
@@ -91,33 +95,97 @@ class LearningUnitController extends Controller
     /**
      * Reorder Learning Units via Drag & Drop Logic
      */
+   
+
     public function reorder(ReorderUnitsRequest $request, $roadmapId)
     {
-        $orderedIds = $request->unit_ids;
+        $validated = $request->validated();
+        $unitId = (int) $validated['unit_id'];
+        $newPosition = (int) $validated['new_position'];
 
-        // 1. التحقق من أن جميع الوحدات تابعة لنفس الـ Roadmap الممررة في الرابط
-        // نمنع هنا تداخل البيانات بين المسارات المختلفة
-        $count = LearningUnit::whereIn('id', $orderedIds)
-                    ->where('roadmap_id', $roadmapId)
-                    ->count();
+        // Verify unit exists AND belongs to this roadmap
+        $unit = LearningUnit::where('id', $unitId)
+            ->where('roadmap_id', $roadmapId)
+            ->first();
 
-        if ($count !== count($orderedIds)) {
+        if (!$unit) {
             return $this->errorResponse(
-                'Validation Error',
-                ['unit_ids' => ['One or more units do not belong to this roadmap or duplicates exist.']],
-                422
+                'الوحدة غير موجودة في هذا المسار',
+                null,
+                404
             );
         }
 
-        // 2. تنفيذ التحديث داخل Transaction لضمان سلامة البيانات
-        DB::transaction(function () use ($orderedIds) {
-            foreach ($orderedIds as $index => $id) {
-                // الترتيب يبدأ من 1 بدلاً من 0 ليناسب البشر
-                LearningUnit::where('id', $id)->update(['position' => $index + 1]);
+        $result = DB::transaction(function () use ($unit, $roadmapId, $newPosition) {
+            // Step 1: Normalize positions to contiguous 1..N (fixes gaps & duplicates)
+            // Use a temporary offset to avoid unique constraint violations during normalization
+            $units = LearningUnit::where('roadmap_id', $roadmapId)
+                ->orderBy('position')
+                ->orderBy('id')
+                ->get();
+
+            $maxOffset = $units->count() + 1000;
+            foreach ($units as $index => $u) {
+                LearningUnit::where('id', $u->id)->update(['position' => $maxOffset + $index]);
             }
+            foreach ($units as $index => $u) {
+                LearningUnit::where('id', $u->id)->update(['position' => $index + 1]);
+            }
+
+            // Step 2: Refresh the unit's position after normalization
+            $unit->refresh();
+            $oldPosition = $unit->position;
+
+            // Step 3: Clamp newPosition to valid range 1..maxPosition
+            $maxPosition = $units->count();
+            $newPosition = max(1, min($newPosition, $maxPosition));
+
+            // If position unchanged after clamping, skip
+            if ($oldPosition === $newPosition) {
+                return [
+                    'old_position' => $oldPosition,
+                    'new_position' => $newPosition,
+                ];
+            }
+
+            // Step 4: Temporarily move the target unit out of the way
+            LearningUnit::where('id', $unit->id)->update(['position' => $maxPosition + 1]);
+
+            // Step 5: Shift surrounding units
+            if ($newPosition > $oldPosition) {
+                // تحريك لأسفل: الوحدات بين (old+1) و new تتحرك للأعلى
+                LearningUnit::where('roadmap_id', $roadmapId)
+                    ->whereBetween('position', [$oldPosition + 1, $newPosition])
+                    ->decrement('position');
+            } else {
+                // تحريك لأعلى: الوحدات بين new و (old-1) تتحرك للأسفل
+                LearningUnit::where('roadmap_id', $roadmapId)
+                    ->whereBetween('position', [$newPosition, $oldPosition - 1])
+                    ->increment('position');
+            }
+
+            // Step 6: Place the moved unit at the new position
+            LearningUnit::where('id', $unit->id)->update(['position' => $newPosition]);
+
+            return [
+                'old_position' => $oldPosition,
+                'new_position' => $newPosition,
+            ];
         });
 
-        return $this->successResponse(null, 'Units reordered successfully');
+        // Return all units in their new order
+        $units = LearningUnit::where('roadmap_id', $roadmapId)
+            ->orderBy('position')
+            ->get(['id', 'title', 'position', 'is_active', 'unit_type']);
+
+        return $this->successResponse([
+            'roadmap_id' => (int) $roadmapId,
+            'moved_unit_id' => $unit->id,
+            'old_position' => $result['old_position'],
+            'new_position' => $result['new_position'],
+            'updated_count' => $units->count(),
+            'units' => $units,
+        ], 'تم إعادة الترتيب بنجاح');
     }
 
     /**
@@ -127,15 +195,14 @@ class LearningUnitController extends Controller
     {
         $unit = LearningUnit::findOrFail($unitId);
 
-        // قلب القيمة الحالية
-        $unit->update([
-            'is_active' => ! $unit->is_active
-        ]);
+        // قلب القيمة الحالية بشكل آمن
+        $unit->is_active = !(bool) $unit->is_active;
+        $unit->save();
 
         return $this->successResponse([
             'unit_id' => $unit->id,
             'is_active' => $unit->is_active,
-            'title' => $unit->title
-        ], 'Unit status updated');
+            'title' => $unit->title,
+        ], $unit->is_active ? 'تم تفعيل الوحدة بنجاح' : 'تم تعطيل الوحدة بنجاح');
     }
 }

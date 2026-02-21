@@ -16,7 +16,7 @@ class SearchRoadmapRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'query' => 'required|string|min:2|max:100',
+            'query' => 'nullable|string|min:2|max:100',
             'level' => 'nullable|in:beginner,intermediate,advanced',
             'limit' => 'nullable|integer|min:1|max:20',
         ];
@@ -25,7 +25,6 @@ class SearchRoadmapRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'query.required' => 'كلمة البحث مطلوبة',
             'query.min' => 'كلمة البحث يجب أن تكون على الأقل حرفين',
             'query.max' => 'كلمة البحث يجب ألا تتجاوز 100 حرف',
             'level.in' => 'المستوى يجب أن يكون أحد: beginner, intermediate, advanced',

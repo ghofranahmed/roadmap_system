@@ -52,29 +52,40 @@ class RoadmapController extends Controller
     {
         try {
             $validated = $request->validated();
-            
-            $roadmaps = Roadmap::where('is_active', true)
-                ->withCount(['enrollments', 'learningUnits'])
-                ->when(!empty($validated['query']), function ($query) use ($validated) {
-                    $query->where(function ($q) use ($validated) {
-                        $q->where('title', 'like', "%{$validated['query']}%")
-                          ->orWhere('description', 'like', "%{$validated['query']}%");
-                    });
-                })
-                ->when(!empty($validated['level']), function ($query) use ($validated) {
-                    $query->where('level', $validated['level']);
-                })
-                ->limit($validated['limit'] ?? 10)
-                ->get();
-            
+
+            $searchQuery = trim($validated['query'] ?? '');
+            $level = $validated['level'] ?? null;
+            $limit = $validated['limit'] ?? 10;
+
+            $query = Roadmap::where('is_active', true)
+                ->withCount(['enrollments', 'learningUnits']);
+
+            if ($searchQuery !== '') {
+                $query->where(function ($q) use ($searchQuery) {
+                    $q->where('title', 'like', "%{$searchQuery}%")
+                      ->orWhere('description', 'like', "%{$searchQuery}%");
+                });
+            }
+
+            if ($level !== null) {
+                $query->where('level', $level);
+            }
+
+            // When no query and no level, return latest active roadmaps
+            $query->orderBy('created_at', 'desc');
+
+            $roadmaps = $query->limit($limit)->get();
+
             return $this->successResponse([
                 'roadmaps' => RoadmapResource::collection($roadmaps),
                 'meta' => [
                     'total_results' => $roadmaps->count(),
-                    'search_query' => $validated['query'] ?? null
-                ]
+                    'search_query' => $searchQuery !== '' ? $searchQuery : null,
+                    'level' => $level,
+                    'limit' => $limit,
+                ],
             ], 'تم البحث بنجاح');
-            
+
         } catch (\Exception $e) {
             return $this->handleException($e, 'Roadmap search error', $request->all());
         }

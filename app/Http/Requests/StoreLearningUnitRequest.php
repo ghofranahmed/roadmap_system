@@ -13,9 +13,18 @@ class StoreLearningUnitRequest extends FormRequest
 
     public function rules(): array
     {
+        $isUpdate = $this->isMethod('put') || $this->isMethod('patch');
+
         return [
-            'title' => 'required|string|max:255',
-            'position' => 'integer|min:1', // اختياري، يمكن حسابه تلقائياً
+            'title' => ($isUpdate ? 'sometimes|' : 'required|') . 'string|max:255',
+            'position' => $isUpdate ? 'prohibited' : 'nullable|integer|min:1',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'position.prohibited' => 'لا يمكن تعديل position من هنا، استخدم endpoint إعادة الترتيب',
         ];
     }
 }
