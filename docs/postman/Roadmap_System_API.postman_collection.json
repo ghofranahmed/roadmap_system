@@ -1,0 +1,2009 @@
+{
+	"info": {
+		"_postman_id": "roadmap-system-api-full",
+		"name": "Roadmap System API",
+		"description": "Complete QA test collection for the Roadmap System API.\nCovers: Auth, Profile, Password Reset, Enrollments, Lesson Tracking, Admin Users.\nGenerated from POSTMAN_FEATURE_TESTING_GUIDE.md",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "3.1 Login as Normal User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const json = pm.response.json();",
+									"",
+									"pm.test(\"Login successful\", function () {",
+									"    pm.expect(json.success).to.be.true;",
+									"    pm.expect(json.data.token).to.be.a(\"string\");",
+									"});",
+									"",
+									"if (json.success && json.data.token) {",
+									"    pm.environment.set(\"token_user\", json.data.token);",
+									"    pm.environment.set(\"user_id\", json.data.user.id);",
+									"    pm.environment.set(\"user_email\", json.data.user.email);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"{{user_email}}\",\n    \"password\": \"{{user_password}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						}
+					}
+				},
+				{
+					"name": "3.2 Login as Admin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const json = pm.response.json();",
+									"",
+									"pm.test(\"Admin login successful\", function () {",
+									"    pm.expect(json.success).to.be.true;",
+									"    pm.expect(json.data.token).to.be.a(\"string\");",
+									"});",
+									"",
+									"if (json.success && json.data.token) {",
+									"    pm.environment.set(\"token_admin\", json.data.token);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"{{admin_email}}\",\n    \"password\": \"{{admin_password}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						}
+					}
+				},
+				{
+					"name": "3.3 Get My Profile (save user_id)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const json = pm.response.json();",
+									"",
+									"pm.test(\"Profile retrieved\", function () {",
+									"    pm.expect(json.success).to.be.true;",
+									"    pm.expect(json.data.id).to.be.a(\"number\");",
+									"});",
+									"",
+									"if (json.success) {",
+									"    pm.environment.set(\"user_id\", json.data.id);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_user}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/profile",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"profile"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Profile",
+			"item": [
+				{
+					"name": "Update Profile",
+					"item": [
+						{
+							"name": "4.1.1 Positive — Update username",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Username updated\", function () {",
+											"    const json = pm.response.json();",
+											"    pm.expect(json.success).to.be.true;",
+											"    pm.expect(json.data.username).to.eql(\"updated_username\");",
+											"});"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token_user}}"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"username\": \"updated_username\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/update-account",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"update-account"
+									]
+								}
+							}
+						},
+						{
+							"name": "4.1.2 Positive — Update password",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token_user}}"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"current_password\": \"Test@1234\",\n    \"password\": \"NewPass@5678\",\n    \"password_confirmation\": \"NewPass@5678\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/update-account",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"update-account"
+									]
+								}
+							}
+						},
+						{
+							"name": "4.1.3 Validation — Invalid email format",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 422\", function () {",
+											"    pm.response.to.have.status(422);",
+											"});"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token_user}}"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"email\": \"not-an-email\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/update-account",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"update-account"
+									]
+								}
+							}
+						},
+						{
+							"name": "4.1.4 Validation — Password without current_password",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 422\", function () {",
+											"    pm.response.to.have.status(422);",
+											"});"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token_user}}"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"password\": \"NewPass@5678\",\n    \"password_confirmation\": \"NewPass@5678\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/update-account",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"update-account"
+									]
+								}
+							}
+						},
+						{
+							"name": "4.1.5 Validation — Wrong current password",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 401\", function () {",
+											"    pm.response.to.have.status(401);",
+											"});"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token_user}}"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"current_password\": \"WrongPassword123!\",\n    \"password\": \"NewPass@5678\",\n    \"password_confirmation\": \"NewPass@5678\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/update-account",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"update-account"
+									]
+								}
+							}
+						},
+						{
+							"name": "4.1.6 Unauthorized — No token",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 401\", function () {",
+											"    pm.response.to.have.status(401);",
+											"});"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"username\": \"hacker\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/update-account",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"update-account"
+									]
+								}
+							}
+						}
+					]
+				},
+				{
+					"name": "Profile Picture",
+					"item": [
+						{
+							"name": "4.2.1 Positive — Upload valid image",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Profile picture URL returned\", function () {",
+											"    const json = pm.response.json();",
+											"    pm.expect(json.success).to.be.true;",
+											"    pm.expect(json.data.profile_picture_url).to.be.a(\"string\");",
+											"});"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token_user}}"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "profile_picture",
+											"type": "file",
+											"src": ""
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/update-profile-picture",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"update-profile-picture"
+									]
+								}
+							}
+						},
+						{
+							"name": "4.2.2 Validation — Invalid file type (.pdf)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 422\", function () {",
+											"    pm.response.to.have.status(422);",
+											"});"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token_user}}"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "profile_picture",
+											"type": "file",
+											"src": ""
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/update-profile-picture",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"update-profile-picture"
+									]
+								}
+							}
+						},
+						{
+							"name": "4.2.3 Validation — Oversized file (> 2MB)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 422\", function () {",
+											"    pm.response.to.have.status(422);",
+											"});"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token_user}}"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "profile_picture",
+											"type": "file",
+											"src": ""
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/update-profile-picture",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"update-profile-picture"
+									]
+								}
+							}
+						},
+						{
+							"name": "4.2.4 Validation — No file sent",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 422\", function () {",
+											"    pm.response.to.have.status(422);",
+											"});"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token_user}}"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": []
+								},
+								"url": {
+									"raw": "{{base_url}}/update-profile-picture",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"update-profile-picture"
+									]
+								}
+							}
+						},
+						{
+							"name": "4.2.5 Unauthorized — No token",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 401\", function () {",
+											"    pm.response.to.have.status(401);",
+											"});"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "profile_picture",
+											"type": "file",
+											"src": ""
+										}
+									]
+								},
+								"url": {
+									"raw": "{{base_url}}/update-profile-picture",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"update-profile-picture"
+									]
+								}
+							}
+						},
+						{
+							"name": "4.3.1 Delete existing picture",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Picture is null\", function () {",
+											"    const json = pm.response.json();",
+											"    pm.expect(json.data.profile_picture).to.be.null;",
+											"});"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token_user}}"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/delete-profile-picture",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"delete-profile-picture"
+									]
+								}
+							}
+						},
+						{
+							"name": "4.3.2 Already Deleted — No picture to delete",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 404\", function () {",
+											"    pm.response.to.have.status(404);",
+											"});"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token_user}}"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/delete-profile-picture",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"delete-profile-picture"
+									]
+								}
+							}
+						},
+						{
+							"name": "4.3.3 Unauthorized — No token",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 401\", function () {",
+											"    pm.response.to.have.status(401);",
+											"});"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/delete-profile-picture",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"delete-profile-picture"
+									]
+								}
+							}
+						}
+					]
+				},
+				{
+					"name": "Delete Account (Self)",
+					"item": [
+						{
+							"name": "4.6.1 Positive — Delete own account",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Account deleted\", function () {",
+											"    pm.expect(pm.response.json().success).to.be.true;",
+											"});"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token_user}}"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"password\": \"{{user_password}}\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/delete-account",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"delete-account"
+									]
+								}
+							}
+						},
+						{
+							"name": "4.6.1b Verify — Token invalidated after delete",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 401\", function () {",
+											"    pm.response.to.have.status(401);",
+											"});"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token_user}}"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/profile",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"profile"
+									]
+								}
+							}
+						},
+						{
+							"name": "4.6.2 Wrong password",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 401\", function () {",
+											"    pm.response.to.have.status(401);",
+											"});"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token_user}}"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"password\": \"WrongPassword!\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/delete-account",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"delete-account"
+									]
+								}
+							}
+						},
+						{
+							"name": "4.6.3 Missing password",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 422\", function () {",
+											"    pm.response.to.have.status(422);",
+											"});"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token_user}}"
+									},
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{}"
+								},
+								"url": {
+									"raw": "{{base_url}}/delete-account",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"delete-account"
+									]
+								}
+							}
+						},
+						{
+							"name": "4.6.4 Unauthorized — No token",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 401\", function () {",
+											"    pm.response.to.have.status(401);",
+											"});"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"password\": \"anything\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/delete-account",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"delete-account"
+									]
+								}
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Password Reset",
+			"item": [
+				{
+					"name": "Forgot Password",
+					"item": [
+						{
+							"name": "4.4.1 Positive — Valid email",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Success message\", function () {",
+											"    const json = pm.response.json();",
+											"    pm.expect(json.status).to.eql(\"success\");",
+											"});"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"email\": \"testuser@example.com\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/auth/forgot-password",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"auth",
+										"forgot-password"
+									]
+								}
+							}
+						},
+						{
+							"name": "4.4.2 Non-existing email",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 404\", function () {",
+											"    pm.response.to.have.status(404);",
+											"});"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"email\": \"nonexistent@example.com\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/auth/forgot-password",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"auth",
+										"forgot-password"
+									]
+								}
+							}
+						},
+						{
+							"name": "4.4.3 Validation — Missing email",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 422\", function () {",
+											"    pm.response.to.have.status(422);",
+											"});"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{}"
+								},
+								"url": {
+									"raw": "{{base_url}}/auth/forgot-password",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"auth",
+										"forgot-password"
+									]
+								}
+							}
+						},
+						{
+							"name": "4.4.4 Validation — Invalid email format",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 422\", function () {",
+											"    pm.response.to.have.status(422);",
+											"});"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"email\": \"not-valid\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/auth/forgot-password",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"auth",
+										"forgot-password"
+									]
+								}
+							}
+						}
+					]
+				},
+				{
+					"name": "Reset Password",
+					"item": [
+						{
+							"name": "4.5.1 Positive — Valid reset",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Password reset success\", function () {",
+											"    pm.expect(pm.response.json().status).to.eql(\"success\");",
+											"});"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"token\": \"PASTE_TOKEN_FROM_EMAIL_OR_DB\",\n    \"email\": \"testuser@example.com\",\n    \"password\": \"NewSecure@Pass1\",\n    \"password_confirmation\": \"NewSecure@Pass1\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/auth/reset-password",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"auth",
+										"reset-password"
+									]
+								}
+							}
+						},
+						{
+							"name": "4.5.2 Invalid token",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 400\", function () {",
+											"    pm.response.to.have.status(400);",
+											"});"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"token\": \"invalid-token-abc123\",\n    \"email\": \"testuser@example.com\",\n    \"password\": \"NewSecure@Pass1\",\n    \"password_confirmation\": \"NewSecure@Pass1\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/auth/reset-password",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"auth",
+										"reset-password"
+									]
+								}
+							}
+						},
+						{
+							"name": "4.5.3 Weak password — Missing symbols",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 422\", function () {",
+											"    pm.response.to.have.status(422);",
+											"});"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"token\": \"VALID_TOKEN\",\n    \"email\": \"testuser@example.com\",\n    \"password\": \"weakpass1\",\n    \"password_confirmation\": \"weakpass1\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/auth/reset-password",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"auth",
+										"reset-password"
+									]
+								}
+							}
+						},
+						{
+							"name": "4.5.4 Password mismatch",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 422\", function () {",
+											"    pm.response.to.have.status(422);",
+											"});"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"token\": \"VALID_TOKEN\",\n    \"email\": \"testuser@example.com\",\n    \"password\": \"NewSecure@Pass1\",\n    \"password_confirmation\": \"DifferentPass@2\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/auth/reset-password",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"auth",
+										"reset-password"
+									]
+								}
+							}
+						},
+						{
+							"name": "4.5.5 Non-existing email",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 422\", function () {",
+											"    pm.response.to.have.status(422);",
+											"});"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"token\": \"some-token\",\n    \"email\": \"ghost@example.com\",\n    \"password\": \"NewSecure@Pass1\",\n    \"password_confirmation\": \"NewSecure@Pass1\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/auth/reset-password",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"auth",
+										"reset-password"
+									]
+								}
+							}
+						}
+					]
+				},
+				{
+					"name": "Verify Reset Token (Helper)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200 or 400\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 400]);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"token\": \"PASTE_TOKEN\",\n    \"email\": \"testuser@example.com\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/verify-reset-token",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"verify-reset-token"
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Reset Attempts Remaining (Helper)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Contains attempt data\", function () {",
+									"    const json = pm.response.json();",
+									"    pm.expect(json.status).to.eql(\"success\");",
+									"    pm.expect(json.data).to.have.property(\"email_attempts_remaining\");",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/auth/reset-attempts?email=testuser@example.com",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"reset-attempts"
+							],
+							"query": [
+								{
+									"key": "email",
+									"value": "testuser@example.com"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Enrollments",
+			"item": [
+				{
+					"name": "4.8.1 Unenroll from Roadmap",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Unenrolled\", function () {",
+									"    pm.expect(pm.response.json().success).to.be.true;",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_user}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/roadmaps/{{roadmap_id}}/unenroll",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"roadmaps",
+								"{{roadmap_id}}",
+								"unenroll"
+							]
+						}
+					}
+				},
+				{
+					"name": "4.8.2 Not Enrolled Case",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_user}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/roadmaps/{{roadmap_id}}/unenroll",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"roadmaps",
+								"{{roadmap_id}}",
+								"unenroll"
+							]
+						}
+					}
+				},
+				{
+					"name": "4.8.3 Re-enroll (Fresh Start)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Fresh enrollment\", function () {",
+									"    const json = pm.response.json();",
+									"    pm.expect(json.data.enrollment.xp_points).to.eql(0);",
+									"    pm.expect(json.data.enrollment.status).to.eql(\"active\");",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_user}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/roadmaps/{{roadmap_id}}/enroll",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"roadmaps",
+								"{{roadmap_id}}",
+								"enroll"
+							]
+						}
+					}
+				},
+				{
+					"name": "Update Enrollment Status",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_user}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"paused\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/me/enrollments/{{roadmap_id}}/status",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"me",
+								"enrollments",
+								"{{roadmap_id}}",
+								"status"
+							]
+						}
+					}
+				},
+				{
+					"name": "4.8.6 Unauthorized — No token (unenroll)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 401\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/roadmaps/1/unenroll",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"roadmaps",
+								"1",
+								"unenroll"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Lesson Tracking",
+			"item": [
+				{
+					"name": "4.8.4 Reset Individual Lesson Tracking",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Lesson reset to incomplete\", function () {",
+									"    pm.expect(pm.response.json().data.is_complete).to.be.false;",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_user}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/lessons/{{lesson_id}}/track/reset",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"lessons",
+								"{{lesson_id}}",
+								"track",
+								"reset"
+							]
+						}
+					}
+				},
+				{
+					"name": "4.8.5 Reset Lesson — No Tracking Exists",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_user}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/lessons/{{lesson_id}}/track/reset",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"lessons",
+								"{{lesson_id}}",
+								"track",
+								"reset"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Admin Users",
+			"item": [
+				{
+					"name": "4.7.1 Positive — Admin deletes a user",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200 or 204\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_admin}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/users/{{user_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"users",
+								"{{user_id}}"
+							]
+						}
+					}
+				},
+				{
+					"name": "4.7.2 Forbidden — Non-admin user tries to delete",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 403\", function () {",
+									"    pm.response.to.have.status(403);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_user}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/users/5",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"users",
+								"5"
+							]
+						}
+					}
+				},
+				{
+					"name": "4.7.3 Admin Tries to Delete Self",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 403\", function () {",
+									"    pm.response.to.have.status(403);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_admin}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/users/{{admin_own_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"users",
+								"{{admin_own_id}}"
+							]
+						}
+					}
+				},
+				{
+					"name": "4.7.4 Not Found — Invalid user ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_admin}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/users/99999",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"users",
+								"99999"
+							]
+						}
+					}
+				}
+			]
+		}
+	]
+}

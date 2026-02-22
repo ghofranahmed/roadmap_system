@@ -206,10 +206,20 @@ Route::middleware('auth:sanctum')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
+| Home — Suggested Roadmaps (Authenticated users)
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/home/suggested-roadmaps', [RoadmapController::class, 'suggested']);
+});
+
+/*
+|--------------------------------------------------------------------------
 | Notifications (Authenticated users)
 |--------------------------------------------------------------------------
 */
 Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
 });

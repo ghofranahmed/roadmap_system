@@ -1,0 +1,633 @@
+{
+  "meta": {
+    "name": "Smart Teacher Chatbot — API Test Pack",
+    "version": "1.0.0",
+    "base_url": "http://roadmap_system.test",
+    "api_prefix": "/api/v1",
+    "default_headers": {
+      "Accept": "application/json",
+      "Content-Type": "application/json"
+    },
+    "auth": {
+      "type": "bearer",
+      "token_var": "token"
+    },
+    "notes": [
+      "All chatbot endpoints require auth:sanctum (Bearer token).",
+      "Paginated endpoints return: success, message, data[], meta{}, links{}.",
+      "Non-paginated success endpoints return: success, message, data.",
+      "Error responses return: success=false, message, and optionally errors.",
+      "Rate limit on POST message endpoints: throttle:15,1 (15 req/min). Exceeding returns 429.",
+      "Session ownership is enforced: user can only access their own sessions (403 on violation).",
+      "Deleting a session cascade-deletes all its messages (FK cascadeOnDelete).",
+      "Variables with {{var}} syntax must be resolved by the runner before sending."
+    ]
+  },
+  "variables": {
+    "token": null,
+    "token_user_b": null,
+    "session_id": null,
+    "session_id_quick": null,
+    "assistant_message_id": null,
+    "non_existing_session_id": 999999,
+    "login_email": "testuser@example.com",
+    "login_password": "Password@123",
+    "login_email_user_b": "testuser_b@example.com",
+    "login_password_user_b": "Password@123"
+  },
+  "test_cases": [
+    {
+      "id": "CB-000",
+      "name": "Unauthenticated access — no token",
+      "description": "Calling GET /chatbot/sessions without a Bearer token must return 401 Unauthenticated.",
+      "request": {
+        "method": "GET",
+        "path": "/chatbot/sessions",
+        "headers": {
+          "Accept": "application/json"
+        },
+        "query": {},
+        "body": null
+      },
+      "extract": [],
+      "assertions": [
+        { "type": "status_code", "op": "equals", "value": 401 },
+        { "type": "json_path_exists", "path": "$.message" },
+        { "type": "json_path_contains", "path": "$.message", "value": "Unauthenticated" }
+      ]
+    },
+    {
+      "id": "CB-001",
+      "name": "Login User A — obtain auth token",
+      "description": "Login with User A credentials to get a Sanctum Bearer token for subsequent chatbot tests.",
+      "request": {
+        "method": "POST",
+        "path": "/auth/login",
+        "headers": {
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        },
+        "query": {},
+        "body": {
+          "email": "{{login_email}}",
+          "password": "{{login_password}}"
+        }
+      },
+      "extract": [
+        { "from": "$.data.token", "to": "token" }
+      ],
+      "assertions": [
+        { "type": "status_code", "op": "equals", "value": 200 },
+        { "type": "json_path_exists", "path": "$.success" },
+        { "type": "json_path_equals", "path": "$.success", "value": true },
+        { "type": "json_path_exists", "path": "$.data.token" },
+        { "type": "json_path_not_empty", "path": "$.data.token" },
+        { "type": "json_path_exists", "path": "$.data.user" },
+        { "type": "json_path_equals", "path": "$.data.token_type", "value": "Bearer" }
+      ]
+    },
+    {
+      "id": "CB-010",
+      "name": "List chatbot sessions",
+      "description": "GET /chatbot/sessions returns paginated list of the authenticated user's chatbot sessions. May be empty for a new user.",
+      "request": {
+        "method": "GET",
+        "path": "/chatbot/sessions",
+        "headers": {
+          "Accept": "application/json",
+          "Authorization": "Bearer {{token}}"
+        },
+        "query": {
+          "per_page": 10
+        },
+        "body": null
+      },
+      "extract": [],
+      "assertions": [
+        { "type": "status_code", "op": "equals", "value": 200 },
+        { "type": "json_path_equals", "path": "$.success", "value": true },
+        { "type": "json_path_contains", "path": "$.message", "value": "Sessions retrieved successfully" },
+        { "type": "json_path_exists", "path": "$.data" },
+        { "type": "json_path_is_array", "path": "$.data" },
+        { "type": "json_path_exists", "path": "$.meta" },
+        { "type": "json_path_exists", "path": "$.meta.current_page" },
+        { "type": "json_path_exists", "path": "$.meta.total" },
+        { "type": "json_path_exists", "path": "$.meta.per_page" },
+        { "type": "json_path_exists", "path": "$.links" }
+      ]
+    },
+    {
+      "id": "CB-020",
+      "name": "Create a new chatbot session",
+      "description": "POST /chatbot/sessions creates a new session. Title is optional (nullable|string|max:255). Returns 201 with the created session object.",
+      "request": {
+        "method": "POST",
+        "path": "/chatbot/sessions",
+        "headers": {
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+          "Authorization": "Bearer {{token}}"
+        },
+        "query": {},
+        "body": {
+          "title": "Test session — Laravel questions"
+        }
+      },
+      "extract": [
+        { "from": "$.data.id", "to": "session_id" }
+      ],
+      "assertions": [
+        { "type": "status_code", "op": "equals", "value": 201 },
+        { "type": "json_path_equals", "path": "$.success", "value": true },
+        { "type": "json_path_contains", "path": "$.message", "value": "Session created successfully" },
+        { "type": "json_path_exists", "path": "$.data.id" },
+        { "type": "json_path_is_number", "path": "$.data.id" },
+        { "type": "json_path_equals", "path": "$.data.title", "value": "Test session — Laravel questions" },
+        { "type": "json_path_exists", "path": "$.data.user_id" },
+        { "type": "json_path_exists", "path": "$.data.created_at" }
+      ]
+    },
+    {
+      "id": "CB-021",
+      "name": "Create session without title (nullable)",
+      "description": "POST /chatbot/sessions with no title field — title should default to null. Verifies nullable validation works.",
+      "request": {
+        "method": "POST",
+        "path": "/chatbot/sessions",
+        "headers": {
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+          "Authorization": "Bearer {{token}}"
+        },
+        "query": {},
+        "body": {}
+      },
+      "extract": [],
+      "assertions": [
+        { "type": "status_code", "op": "equals", "value": 201 },
+        { "type": "json_path_equals", "path": "$.success", "value": true },
+        { "type": "json_path_exists", "path": "$.data.id" },
+        { "type": "json_path_equals", "path": "$.data.title", "value": null }
+      ]
+    },
+    {
+      "id": "CB-030",
+      "name": "Get messages for a session (initially empty)",
+      "description": "GET /chatbot/sessions/{id}/messages returns paginated messages for the session. Initially empty after creation.",
+      "request": {
+        "method": "GET",
+        "path": "/chatbot/sessions/{{session_id}}/messages",
+        "headers": {
+          "Accept": "application/json",
+          "Authorization": "Bearer {{token}}"
+        },
+        "query": {
+          "per_page": 30
+        },
+        "body": null
+      },
+      "extract": [],
+      "assertions": [
+        { "type": "status_code", "op": "equals", "value": 200 },
+        { "type": "json_path_equals", "path": "$.success", "value": true },
+        { "type": "json_path_contains", "path": "$.message", "value": "Messages retrieved successfully" },
+        { "type": "json_path_is_array", "path": "$.data" },
+        { "type": "json_path_equals", "path": "$.meta.total", "value": 0 },
+        { "type": "json_path_exists", "path": "$.meta.current_page" },
+        { "type": "json_path_exists", "path": "$.links" }
+      ]
+    },
+    {
+      "id": "CB-040",
+      "name": "Send message to session — get AI reply",
+      "description": "POST /chatbot/sessions/{id}/messages sends a user message and returns both user_message and assistant_message. Rate limited: throttle:15,1.",
+      "request": {
+        "method": "POST",
+        "path": "/chatbot/sessions/{{session_id}}/messages",
+        "headers": {
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+          "Authorization": "Bearer {{token}}"
+        },
+        "query": {},
+        "body": {
+          "message": "What is a closure in PHP?"
+        }
+      },
+      "extract": [
+        { "from": "$.data.assistant_message.id", "to": "assistant_message_id" }
+      ],
+      "assertions": [
+        { "type": "status_code", "op": "equals", "value": 201 },
+        { "type": "json_path_equals", "path": "$.success", "value": true },
+        { "type": "json_path_contains", "path": "$.message", "value": "Reply generated successfully" },
+        { "type": "json_path_exists", "path": "$.data.session" },
+        { "type": "json_path_exists", "path": "$.data.session.id" },
+        { "type": "json_path_exists", "path": "$.data.session.last_activity_at" },
+        { "type": "json_path_exists", "path": "$.data.user_message" },
+        { "type": "json_path_equals", "path": "$.data.user_message.role", "value": "user" },
+        { "type": "json_path_equals", "path": "$.data.user_message.body", "value": "What is a closure in PHP?" },
+        { "type": "json_path_exists", "path": "$.data.assistant_message" },
+        { "type": "json_path_equals", "path": "$.data.assistant_message.role", "value": "assistant" },
+        { "type": "json_path_not_empty", "path": "$.data.assistant_message.body" },
+        { "type": "json_path_exists", "path": "$.data.assistant_message.id" },
+        { "type": "json_path_is_number", "path": "$.data.assistant_message.id" }
+      ]
+    },
+    {
+      "id": "CB-041",
+      "name": "Verify messages persist after sending",
+      "description": "GET /chatbot/sessions/{id}/messages after sending should now return 2 messages (user + assistant).",
+      "request": {
+        "method": "GET",
+        "path": "/chatbot/sessions/{{session_id}}/messages",
+        "headers": {
+          "Accept": "application/json",
+          "Authorization": "Bearer {{token}}"
+        },
+        "query": {},
+        "body": null
+      },
+      "extract": [],
+      "assertions": [
+        { "type": "status_code", "op": "equals", "value": 200 },
+        { "type": "json_path_equals", "path": "$.success", "value": true },
+        { "type": "json_path_equals", "path": "$.meta.total", "value": 2 },
+        { "type": "json_path_equals", "path": "$.data[0].role", "value": "user" },
+        { "type": "json_path_equals", "path": "$.data[1].role", "value": "assistant" }
+      ]
+    },
+    {
+      "id": "CB-050",
+      "name": "Quick send — no session_id (auto-create)",
+      "description": "POST /chatbot/messages without session_id auto-creates a new session (title = first 50 chars of message) and returns the reply. Rate limited: throttle:15,1.",
+      "request": {
+        "method": "POST",
+        "path": "/chatbot/messages",
+        "headers": {
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+          "Authorization": "Bearer {{token}}"
+        },
+        "query": {},
+        "body": {
+          "message": "How do I use Laravel middleware to protect routes?"
+        }
+      },
+      "extract": [
+        { "from": "$.data.session.id", "to": "session_id_quick" }
+      ],
+      "assertions": [
+        { "type": "status_code", "op": "equals", "value": 201 },
+        { "type": "json_path_equals", "path": "$.success", "value": true },
+        { "type": "json_path_contains", "path": "$.message", "value": "Reply generated successfully" },
+        { "type": "json_path_exists", "path": "$.data.session.id" },
+        { "type": "json_path_is_number", "path": "$.data.session.id" },
+        { "type": "json_path_not_empty", "path": "$.data.session.title" },
+        { "type": "json_path_exists", "path": "$.data.user_message" },
+        { "type": "json_path_equals", "path": "$.data.user_message.role", "value": "user" },
+        { "type": "json_path_exists", "path": "$.data.assistant_message" },
+        { "type": "json_path_equals", "path": "$.data.assistant_message.role", "value": "assistant" },
+        { "type": "json_path_not_empty", "path": "$.data.assistant_message.body" }
+      ]
+    },
+    {
+      "id": "CB-051",
+      "name": "Quick send — with existing session_id",
+      "description": "POST /chatbot/messages with an existing session_id should send the message to that session (no new session created).",
+      "request": {
+        "method": "POST",
+        "path": "/chatbot/messages",
+        "headers": {
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+          "Authorization": "Bearer {{token}}"
+        },
+        "query": {},
+        "body": {
+          "message": "Can you explain more about middleware?",
+          "session_id": "{{session_id_quick}}"
+        }
+      },
+      "extract": [],
+      "assertions": [
+        { "type": "status_code", "op": "equals", "value": 201 },
+        { "type": "json_path_equals", "path": "$.success", "value": true },
+        { "type": "json_path_equals", "path": "$.data.session.id", "value": "{{session_id_quick}}" },
+        { "type": "json_path_exists", "path": "$.data.user_message" },
+        { "type": "json_path_exists", "path": "$.data.assistant_message" }
+      ]
+    },
+    {
+      "id": "CB-070",
+      "name": "Validation error — missing message field",
+      "description": "POST /chatbot/sessions/{id}/messages with no message field should return 422 validation error.",
+      "request": {
+        "method": "POST",
+        "path": "/chatbot/sessions/{{session_id}}/messages",
+        "headers": {
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+          "Authorization": "Bearer {{token}}"
+        },
+        "query": {},
+        "body": {}
+      },
+      "extract": [],
+      "assertions": [
+        { "type": "status_code", "op": "equals", "value": 422 },
+        { "type": "json_path_exists", "path": "$.message" },
+        { "type": "json_path_exists", "path": "$.errors.message" }
+      ]
+    },
+    {
+      "id": "CB-071",
+      "name": "Validation error — empty message string",
+      "description": "POST /chatbot/sessions/{id}/messages with message='' should return 422.",
+      "request": {
+        "method": "POST",
+        "path": "/chatbot/sessions/{{session_id}}/messages",
+        "headers": {
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+          "Authorization": "Bearer {{token}}"
+        },
+        "query": {},
+        "body": {
+          "message": ""
+        }
+      },
+      "extract": [],
+      "assertions": [
+        { "type": "status_code", "op": "equals", "value": 422 },
+        { "type": "json_path_exists", "path": "$.errors.message" }
+      ]
+    },
+    {
+      "id": "CB-072",
+      "name": "Non-existing session — 404",
+      "description": "POST /chatbot/sessions/{non_existing_id}/messages with a session ID that does not exist should return 404.",
+      "request": {
+        "method": "POST",
+        "path": "/chatbot/sessions/{{non_existing_session_id}}/messages",
+        "headers": {
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+          "Authorization": "Bearer {{token}}"
+        },
+        "query": {},
+        "body": {
+          "message": "Hello?"
+        }
+      },
+      "extract": [],
+      "assertions": [
+        { "type": "status_code", "op": "equals", "value": 404 },
+        { "type": "json_path_equals", "path": "$.success", "value": false },
+        { "type": "json_path_contains", "path": "$.message", "value": "Session not found" }
+      ]
+    },
+    {
+      "id": "CB-080",
+      "name": "Login User B — obtain second token",
+      "description": "Login with User B credentials to test session ownership enforcement across users.",
+      "request": {
+        "method": "POST",
+        "path": "/auth/login",
+        "headers": {
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        },
+        "query": {},
+        "body": {
+          "email": "{{login_email_user_b}}",
+          "password": "{{login_password_user_b}}"
+        }
+      },
+      "extract": [
+        { "from": "$.data.token", "to": "token_user_b" }
+      ],
+      "assertions": [
+        { "type": "status_code", "op": "equals", "value": 200 },
+        { "type": "json_path_equals", "path": "$.success", "value": true },
+        { "type": "json_path_exists", "path": "$.data.token" },
+        { "type": "json_path_not_empty", "path": "$.data.token" }
+      ]
+    },
+    {
+      "id": "CB-081",
+      "name": "Ownership — User B cannot read User A's session messages",
+      "description": "User B tries to GET messages from User A's session_id_quick. Must return 403.",
+      "request": {
+        "method": "GET",
+        "path": "/chatbot/sessions/{{session_id_quick}}/messages",
+        "headers": {
+          "Accept": "application/json",
+          "Authorization": "Bearer {{token_user_b}}"
+        },
+        "query": {},
+        "body": null
+      },
+      "extract": [],
+      "assertions": [
+        { "type": "status_code", "op": "equals", "value": 403 },
+        { "type": "json_path_equals", "path": "$.success", "value": false },
+        { "type": "json_path_contains", "path": "$.message", "value": "You can only access your own sessions" }
+      ]
+    },
+    {
+      "id": "CB-082",
+      "name": "Ownership — User B cannot send message to User A's session",
+      "description": "User B tries to POST a message to User A's session_id_quick. Must return 403.",
+      "request": {
+        "method": "POST",
+        "path": "/chatbot/sessions/{{session_id_quick}}/messages",
+        "headers": {
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+          "Authorization": "Bearer {{token_user_b}}"
+        },
+        "query": {},
+        "body": {
+          "message": "I should not be able to do this"
+        }
+      },
+      "extract": [],
+      "assertions": [
+        { "type": "status_code", "op": "equals", "value": 403 },
+        { "type": "json_path_equals", "path": "$.success", "value": false },
+        { "type": "json_path_contains", "path": "$.message", "value": "You can only access your own sessions" }
+      ]
+    },
+    {
+      "id": "CB-083",
+      "name": "Ownership — User B cannot delete User A's session",
+      "description": "User B tries to DELETE User A's session_id. Must return 403.",
+      "request": {
+        "method": "DELETE",
+        "path": "/chatbot/sessions/{{session_id}}/",
+        "headers": {
+          "Accept": "application/json",
+          "Authorization": "Bearer {{token_user_b}}"
+        },
+        "query": {},
+        "body": null
+      },
+      "extract": [],
+      "assertions": [
+        { "type": "status_code", "op": "equals", "value": 403 },
+        { "type": "json_path_equals", "path": "$.success", "value": false },
+        { "type": "json_path_contains", "path": "$.message", "value": "You can only access your own sessions" }
+      ]
+    },
+    {
+      "id": "CB-084",
+      "name": "Ownership — User B quick-send with User A's session_id",
+      "description": "User B tries POST /chatbot/messages with session_id belonging to User A. Must return 403.",
+      "request": {
+        "method": "POST",
+        "path": "/chatbot/messages",
+        "headers": {
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+          "Authorization": "Bearer {{token_user_b}}"
+        },
+        "query": {},
+        "body": {
+          "message": "Trying to hijack session",
+          "session_id": "{{session_id}}"
+        }
+      },
+      "extract": [],
+      "assertions": [
+        { "type": "status_code", "op": "equals", "value": 403 },
+        { "type": "json_path_equals", "path": "$.success", "value": false },
+        { "type": "json_path_contains", "path": "$.message", "value": "You can only access your own sessions" }
+      ]
+    },
+    {
+      "id": "CB-060",
+      "name": "Delete a chatbot session",
+      "description": "DELETE /chatbot/sessions/{id} deletes the session and all its messages (cascade). Returns 200.",
+      "request": {
+        "method": "DELETE",
+        "path": "/chatbot/sessions/{{session_id}}",
+        "headers": {
+          "Accept": "application/json",
+          "Authorization": "Bearer {{token}}"
+        },
+        "query": {},
+        "body": null
+      },
+      "extract": [],
+      "assertions": [
+        { "type": "status_code", "op": "equals", "value": 200 },
+        { "type": "json_path_equals", "path": "$.success", "value": true },
+        { "type": "json_path_contains", "path": "$.message", "value": "Session deleted successfully" },
+        { "type": "json_path_equals", "path": "$.data", "value": null }
+      ]
+    },
+    {
+      "id": "CB-061",
+      "name": "Access deleted session — 404",
+      "description": "GET messages for the session that was just deleted. Should return 404.",
+      "request": {
+        "method": "GET",
+        "path": "/chatbot/sessions/{{session_id}}/messages",
+        "headers": {
+          "Accept": "application/json",
+          "Authorization": "Bearer {{token}}"
+        },
+        "query": {},
+        "body": null
+      },
+      "extract": [],
+      "assertions": [
+        { "type": "status_code", "op": "equals", "value": 404 },
+        { "type": "json_path_equals", "path": "$.success", "value": false },
+        { "type": "json_path_contains", "path": "$.message", "value": "Session not found" }
+      ]
+    },
+    {
+      "id": "CB-062",
+      "name": "Delete already-deleted session — 404",
+      "description": "DELETE /chatbot/sessions/{id} again for the same session. Should return 404.",
+      "request": {
+        "method": "DELETE",
+        "path": "/chatbot/sessions/{{session_id}}",
+        "headers": {
+          "Accept": "application/json",
+          "Authorization": "Bearer {{token}}"
+        },
+        "query": {},
+        "body": null
+      },
+      "extract": [],
+      "assertions": [
+        { "type": "status_code", "op": "equals", "value": 404 },
+        { "type": "json_path_equals", "path": "$.success", "value": false },
+        { "type": "json_path_contains", "path": "$.message", "value": "Session not found" }
+      ]
+    },
+    {
+      "id": "CB-090",
+      "name": "Rate limit — POST message endpoint",
+      "description": "Demonstrates that POST /chatbot/sessions/{id}/messages is throttled at 15 requests per minute. After 15 rapid calls, the 16th should return 429 Too Many Attempts.",
+      "runner_hint": {
+        "repeat": 16,
+        "within_seconds": 60,
+        "target_request_index": "CB-040",
+        "expected_failure_on_iteration": 16,
+        "expected_status_on_failure": 429
+      },
+      "request": {
+        "method": "POST",
+        "path": "/chatbot/sessions/{{session_id_quick}}/messages",
+        "headers": {
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+          "Authorization": "Bearer {{token}}"
+        },
+        "query": {},
+        "body": {
+          "message": "Rate limit test message"
+        }
+      },
+      "extract": [],
+      "assertions": [
+        { "type": "status_code", "op": "equals", "value": 429 },
+        { "type": "json_path_contains", "path": "$.message", "value": "Too Many Attempts" }
+      ]
+    },
+    {
+      "id": "CB-091",
+      "name": "Rate limit — POST quick-send endpoint",
+      "description": "Demonstrates that POST /chatbot/messages is also throttled at 15 requests per minute.",
+      "runner_hint": {
+        "repeat": 16,
+        "within_seconds": 60,
+        "expected_failure_on_iteration": 16,
+        "expected_status_on_failure": 429
+      },
+      "request": {
+        "method": "POST",
+        "path": "/chatbot/messages",
+        "headers": {
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+          "Authorization": "Bearer {{token}}"
+        },
+        "query": {},
+        "body": {
+          "message": "Rate limit quick-send test"
+        }
+      },
+      "extract": [],
+      "assertions": [
+        { "type": "status_code", "op": "equals", "value": 429 },
+        { "type": "json_path_contains", "path": "$.message", "value": "Too Many Attempts" }
+      ]
+    }
+  ]
+}
+

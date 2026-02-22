@@ -7,9 +7,11 @@ use App\Http\Requests\IndexRoadmapRequest;
 
 use App\Http\Requests\SearchRoadmapRequest;
 use App\Http\Requests\ShowRoadmapRequest;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
 use App\Models\Roadmap;
+use App\Models\RoadmapEnrollment;
 use App\Http\Resources\RoadmapResource;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
@@ -228,6 +230,33 @@ class RoadmapController extends Controller
             ->findOrFail($id);
 
         return $this->successResponse($roadmap->enrollments);
+    }
+
+    /**
+     * GET /home/suggested-roadmaps
+     * مسارات مقترحة عشوائية (لا تشمل المسارات المشترك فيها المستخدم)
+     */
+    public function suggested(Request $request)
+    {
+        $user = $request->user();
+
+        $limit = (int) $request->query('limit', 5);
+        $limit = max(1, min($limit, 10)); // clamp between 1–10
+
+        // IDs of roadmaps the user is already enrolled in
+        $enrolledIds = RoadmapEnrollment::where('user_id', $user->id)
+            ->pluck('roadmap_id');
+
+        $roadmaps = Roadmap::where('is_active', true)
+            ->whereNotIn('id', $enrolledIds)
+            ->inRandomOrder()
+            ->limit($limit)
+            ->get();
+
+        return $this->successResponse(
+            RoadmapResource::collection($roadmaps),
+            'تم جلب المسارات المقترحة بنجاح'
+        );
     }
 
 }
