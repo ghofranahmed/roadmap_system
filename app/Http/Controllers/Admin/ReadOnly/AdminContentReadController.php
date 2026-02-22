@@ -120,6 +120,38 @@ class AdminContentReadController extends Controller
         return $this->successResponse($quiz, 'Quiz retrieved successfully');
     }
 
+    /**
+     * GET /admin/roadmaps/{roadmapId}/quizzes
+     * عرض جميع الكويزات لخارطة طريق معينة (مجمعة حسب الوحدة) — للأدمن
+     */
+    public function quizzesByRoadmap($roadmapId)
+    {
+        $units = LearningUnit::where('roadmap_id', $roadmapId)
+            ->orderBy('position')
+            ->with(['quizzes' => function ($q) {
+                $q->with('learningUnit:id,title,roadmap_id')
+                  ->withCount('questions');
+            }])
+            ->get(['id', 'title', 'position', 'is_active', 'roadmap_id']);
+
+        $result = $units
+            ->filter(fn ($unit) => $unit->quizzes->isNotEmpty())
+            ->values()
+            ->map(fn ($unit) => [
+                'unit_id'    => $unit->id,
+                'unit_title' => $unit->title,
+                'position'   => $unit->position,
+                'is_active'  => $unit->is_active,
+                'quizzes'    => $unit->quizzes,
+            ]);
+
+        return $this->successResponse([
+            'roadmap_id'    => (int) $roadmapId,
+            'total_quizzes' => $result->sum(fn ($u) => count($u['quizzes'])),
+            'units'         => $result,
+        ], 'Quizzes by roadmap retrieved successfully');
+    }
+
     // ──────────────────────────────────────────────
     //  CHALLENGES
     // ──────────────────────────────────────────────

@@ -13,6 +13,39 @@ use Illuminate\Support\Facades\DB;
 class QuizController extends Controller
 {
     /**
+     * GET /roadmaps/{roadmapId}/quizzes
+     * عرض جميع الكويزات الخاصة بخارطة طريق معينة (مجمعة حسب الوحدة)
+     */
+    public function roadmapIndex(int $roadmapId)
+    {
+        $units = LearningUnit::where('roadmap_id', $roadmapId)
+            ->where('is_active', true)
+            ->orderBy('position')
+            ->with(['quizzes' => function ($q) {
+                $q->where('is_active', true)
+                  ->select('id', 'learning_unit_id', 'is_active', 'max_xp', 'min_xp', 'created_at');
+            }])
+            ->get(['id', 'title', 'position', 'roadmap_id']);
+
+        // Group quizzes under their unit, only include units that have quizzes
+        $result = $units
+            ->filter(fn ($unit) => $unit->quizzes->isNotEmpty())
+            ->values()
+            ->map(fn ($unit) => [
+                'unit_id'   => $unit->id,
+                'unit_title' => $unit->title,
+                'position'  => $unit->position,
+                'quizzes'   => $unit->quizzes,
+            ]);
+
+        return $this->successResponse([
+            'roadmap_id'  => (int) $roadmapId,
+            'total_quizzes' => $result->sum(fn ($u) => count($u['quizzes'])),
+            'units'       => $result,
+        ], 'تم جلب الكويزات بنجاح');
+    }
+
+    /**
      * GET /units/{unitId}/quizzes
      * يرجع Quiz واحد فقط لأن عندك unique learning_unit_id
      */

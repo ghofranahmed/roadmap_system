@@ -161,6 +161,7 @@ Route::middleware(['auth:sanctum', 'enrolled'])->group(function () {
     */
 
     // ===== QUIZZES =====
+    Route::get('/roadmaps/{roadmapId}/quizzes', [QuizController::class, 'roadmapIndex']);
     Route::get('/units/{unitId}/quizzes', [QuizController::class, 'index']);
     Route::get('/quizzes/{quizId}', [QuizController::class, 'startAttempt'])->middleware('throttle:5,1');
     Route::put('/quiz-attempts/{attemptId}/submit', [QuizController::class, 'submitAttempt'])->middleware('throttle:5,1');
@@ -294,6 +295,7 @@ Route::middleware(['auth:sanctum', 'role:admin,tech_admin'])
 
     Route::get('/resources/search', [ResourceController::class, 'search']);
 
+    Route::get('/roadmaps/{roadmapId}/quizzes', [AdminContentReadController::class, 'quizzesByRoadmap']);
     Route::get('/units/{unitId}/quizzes', [AdminContentReadController::class, 'quizzesIndex']);
     Route::get('/quizzes/{quizId}', [AdminContentReadController::class, 'quizShow']);
     Route::get('/quizzes/{quizId}/questions', [AdminQuizQuestionController::class, 'index']);
@@ -348,6 +350,7 @@ Route::middleware(['auth:sanctum', 'role:tech_admin'])
     Route::post('/quizzes', [AdminQuizController::class, 'store']);
     Route::put('/quizzes/{quiz}', [AdminQuizController::class, 'update']);
     Route::delete('/quizzes/{quiz}', [AdminQuizController::class, 'destroy']);
+    Route::get('/quizzes', [AdminQuizController::class, 'index']);
 
     // ─── Quiz Questions (create / update / delete) ──────────────
     Route::post('/quizzes/{quizId}/questions', [AdminQuizQuestionController::class, 'store']);
