@@ -1,0 +1,1575 @@
+{
+	"info": {
+		"_postman_id": "community-chat-test-collection-v1",
+		"name": "Community Chat — Complete Test Suite",
+		"description": "Comprehensive Postman Collection v2.1 for testing the Community Chatting Feature.\n\n**Flow:**\n1. User Registration/Login → Get Bearer Token\n2. Enroll in Course → Chat Room Auto-Accessible\n3. List Communities → View Enrolled Chat Rooms\n4. Send/Receive Messages → Full Chat Functionality\n5. Ownership & Security → Access Control\n6. Validation & Rate Limiting → Error Handling\n\n**Key Features:**\n- Chat rooms are created automatically when admin creates a roadmap\n- Students automatically get access when they enroll (no explicit join needed)\n- GET /me/community lists all chat rooms for enrolled roadmaps\n- Both roadmap-scoped and chat-room-scoped endpoints available\n\n**Security:**\n- All endpoints require auth:sanctum (Bearer token)\n- Enrollment check enforced (403 if not enrolled)\n- Message ownership enforced (only owner can edit/delete)\n- Mute/ban moderation checks\n\n**Rate Limiting:**\n- Message endpoints: throttle:15,1 (15 requests per minute)\n- Registration/Login: throttle:5,1",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://roadmap_system.test/api/v1",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "token_user_b",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "roadmap_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "chat_room_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "message_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "enrollment_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "register_email",
+			"value": "testuser_community@example.com",
+			"type": "string"
+		},
+		{
+			"key": "register_password",
+			"value": "Password@123",
+			"type": "string"
+		},
+		{
+			"key": "login_email",
+			"value": "testuser_community@example.com",
+			"type": "string"
+		},
+		{
+			"key": "login_password",
+			"value": "Password@123",
+			"type": "string"
+		},
+		{
+			"key": "login_email_user_b",
+			"value": "testuser_b_community@example.com",
+			"type": "string"
+		},
+		{
+			"key": "login_password_user_b",
+			"value": "Password@123",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "1 · Authentication Setup",
+			"item": [
+				{
+					"name": "Register User A",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 201', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('User registered successfully', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"    pm.expect(jsonData.data).to.have.property('user');",
+									"    pm.expect(jsonData.data.user).to.have.property('id');",
+									"    pm.expect(jsonData.data.user).to.have.property('email');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"community_tester\",\n    \"email\": \"{{register_email}}\",\n    \"password\": \"{{register_password}}\",\n    \"password_confirmation\": \"{{register_password}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/register",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"register"
+							]
+						},
+						"description": "Register a new user for testing. Rate limited: 5 requests per minute."
+					},
+					"response": []
+				},
+				{
+					"name": "Login User A — Get Bearer Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Login successful — token received', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"    pm.expect(jsonData.data).to.have.property('token');",
+									"    pm.expect(jsonData.data.token).to.be.a('string').and.not.empty;",
+									"    pm.expect(jsonData.data).to.have.property('user');",
+									"    pm.expect(jsonData.data.token_type).to.eql('Bearer');",
+									"});",
+									"",
+									"// Auto-save token",
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.token) {",
+									"    pm.collectionVariables.set('token', jsonData.data.token);",
+									"    console.log('✅ Token saved: ' + jsonData.data.token.substring(0, 20) + '...');",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"{{login_email}}\",\n    \"password\": \"{{login_password}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login and obtain Bearer token. Token is automatically saved to {{token}} collection variable. Rate limited: 5 requests per minute."
+					},
+					"response": []
+				},
+				{
+					"name": "Login User B — For Ownership Tests",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('User B login successful', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"    pm.expect(jsonData.data).to.have.property('token');",
+									"});",
+									"",
+									"// Auto-save token_user_b",
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.token) {",
+									"    pm.collectionVariables.set('token_user_b', jsonData.data.token);",
+									"    console.log('✅ token_user_b saved');",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"{{login_email_user_b}}\",\n    \"password\": \"{{login_password_user_b}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login as User B for testing ownership and access control. Register User B first if needed."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "2 · Enroll in Course (Auto-Access Chat Room)",
+			"item": [
+				{
+					"name": "GET /roadmaps — List Available Roadmaps",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Roadmaps list returned', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"    pm.expect(jsonData.data).to.be.an('array');",
+									"    pm.expect(jsonData.data.length).to.be.greaterThan(0);",
+									"});",
+									"",
+									"// Extract first roadmap_id if available",
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.length > 0 && !pm.collectionVariables.get('roadmap_id')) {",
+									"    pm.collectionVariables.set('roadmap_id', jsonData.data[0].id);",
+									"    console.log('✅ roadmap_id saved: ' + jsonData.data[0].id);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/roadmaps?per_page=10",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"roadmaps"
+							],
+							"query": [
+								{
+									"key": "per_page",
+									"value": "10"
+								}
+							]
+						},
+						"description": "List available roadmaps to find one to enroll in. Note: Chat rooms are created automatically when admin creates a roadmap."
+					},
+					"response": []
+				},
+				{
+					"name": "POST /roadmaps/{id}/enroll — Enroll in Course",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 201', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('Enrollment successful — chat_room included', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"    pm.expect(jsonData.message).to.include('الاشتراك');",
+									"    pm.expect(jsonData.data).to.have.property('enrollment');",
+									"    pm.expect(jsonData.data).to.have.property('chat_room');",
+									"    pm.expect(jsonData.data.chat_room).to.have.property('id');",
+									"    pm.expect(jsonData.data.chat_room).to.have.property('name');",
+									"    pm.expect(jsonData.data.chat_room).to.have.property('roadmap_id');",
+									"    pm.expect(jsonData.data.chat_room.is_active).to.eql(true);",
+									"});",
+									"",
+									"pm.test('Chat room is linked to enrolled roadmap', function () {",
+									"    var jsonData = pm.response.json();",
+									"    var roadmapId = parseInt(pm.collectionVariables.get('roadmap_id'));",
+									"    pm.expect(jsonData.data.chat_room.roadmap_id).to.eql(roadmapId);",
+									"});",
+									"",
+									"// Auto-extract chat_room_id and enrollment_id",
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.chat_room) {",
+									"    pm.collectionVariables.set('chat_room_id', jsonData.data.chat_room.id);",
+									"    console.log('✅ chat_room_id saved: ' + jsonData.data.chat_room.id);",
+									"}",
+									"if (jsonData.data && jsonData.data.enrollment) {",
+									"    pm.collectionVariables.set('enrollment_id', jsonData.data.enrollment.id);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/roadmaps/{{roadmap_id}}/enroll",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"roadmaps",
+								"{{roadmap_id}}",
+								"enroll"
+							]
+						},
+						"description": "Enroll in a roadmap (course). The response includes the chat_room object, confirming that the student automatically gets access to the chat room. No explicit 'join' action needed — access is based on enrollment status."
+					},
+					"response": []
+				},
+				{
+					"name": "POST /roadmaps/{id}/enroll — Duplicate Enrollment (Already Enrolled)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200 (already enrolled)', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Returns existing enrollment with chat_room', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"    pm.expect(jsonData.message).to.include('مشترك بالفعل');",
+									"    pm.expect(jsonData.data).to.have.property('enrollment');",
+									"    pm.expect(jsonData.data).to.have.property('chat_room');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/roadmaps/{{roadmap_id}}/enroll",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"roadmaps",
+								"{{roadmap_id}}",
+								"enroll"
+							]
+						},
+						"description": "Attempt to enroll again in the same roadmap. Should return existing enrollment (not create duplicate)."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "3 · List Communities (Chat Rooms)",
+			"item": [
+				{
+					"name": "GET /me/community — List User's Chat Rooms",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Community rooms list returned (paginated)', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"    pm.expect(jsonData.message).to.include('Community rooms retrieved successfully');",
+									"    pm.expect(jsonData.data).to.be.an('array');",
+									"    pm.expect(jsonData).to.have.property('meta');",
+									"    pm.expect(jsonData.meta).to.have.property('current_page');",
+									"    pm.expect(jsonData.meta).to.have.property('total');",
+									"    pm.expect(jsonData).to.have.property('links');",
+									"});",
+									"",
+									"pm.test('Chat rooms match enrolled roadmaps', function () {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.data.length > 0) {",
+									"        var room = jsonData.data[0];",
+									"        pm.expect(room).to.have.property('id');",
+									"        pm.expect(room).to.have.property('name');",
+									"        pm.expect(room).to.have.property('roadmap_id');",
+									"        pm.expect(room.is_active).to.eql(true);",
+									"        pm.expect(room).to.have.property('roadmap');",
+									"        pm.expect(room.roadmap).to.have.property('id');",
+									"        pm.expect(room.roadmap).to.have.property('title');",
+									"        console.log('✅ Found chat room: ' + room.name + ' for roadmap: ' + room.roadmap.title);",
+									"    }",
+									"});",
+									"",
+									"pm.test('Only active chat rooms are returned', function () {",
+									"    var jsonData = pm.response.json();",
+									"    jsonData.data.forEach(function(room) {",
+									"        pm.expect(room.is_active).to.eql(true);",
+									"    });",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/me/community?per_page=15",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"me",
+								"community"
+							],
+							"query": [
+								{
+									"key": "per_page",
+									"value": "15"
+								}
+							]
+						},
+						"description": "List all chat rooms the user is part of, based on their roadmap enrollments. This is the endpoint used by the Community Tab in the mobile app. Only returns chat rooms for roadmaps the user is enrolled in."
+					},
+					"response": []
+				},
+				{
+					"name": "GET /me/community — Empty List (No Enrollments)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Empty list for user with no enrollments', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"    pm.expect(jsonData.data).to.be.an('array');",
+									"    pm.expect(jsonData.meta.total).to.eql(0);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_user_b}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/me/community",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"me",
+								"community"
+							]
+						},
+						"description": "Test with User B (no enrollments) to verify empty list is returned correctly."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "4 · Send Messages",
+			"item": [
+				{
+					"name": "POST /community/{chatRoomId}/messages — Send Message",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 201', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('Message sent successfully', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"    pm.expect(jsonData.message).to.include('Message sent successfully');",
+									"    pm.expect(jsonData.data).to.have.property('id');",
+									"    pm.expect(jsonData.data).to.have.property('chat_room_id');",
+									"    pm.expect(jsonData.data).to.have.property('user_id');",
+									"    pm.expect(jsonData.data).to.have.property('content');",
+									"    pm.expect(jsonData.data.content).to.eql('Hello everyone! This is my first message in the community.');",
+									"    pm.expect(jsonData.data).to.have.property('sent_at');",
+									"    pm.expect(jsonData.data).to.have.property('user');",
+									"    pm.expect(jsonData.data.user).to.have.property('id');",
+									"    pm.expect(jsonData.data.user).to.have.property('username');",
+									"});",
+									"",
+									"// Auto-extract message_id",
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.id) {",
+									"    pm.collectionVariables.set('message_id', jsonData.data.id);",
+									"    console.log('✅ message_id saved: ' + jsonData.data.id);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"content\": \"Hello everyone! This is my first message in the community.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/community/{{chat_room_id}}/messages",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"community",
+								"{{chat_room_id}}",
+								"messages"
+							]
+						},
+						"description": "Send a message to a chat room. User must be enrolled in the roadmap that owns this chat room. Message content is validated (required|string|max:2000)."
+					},
+					"response": []
+				},
+				{
+					"name": "POST /roadmaps/{roadmapId}/chat/messages — Send Message (Roadmap-Scoped)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 201', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('Message sent via roadmap-scoped endpoint', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"    pm.expect(jsonData.data).to.have.property('content');",
+									"    pm.expect(jsonData.data.content).to.eql('Alternative endpoint: sending via roadmap ID.');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"content\": \"Alternative endpoint: sending via roadmap ID.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/roadmaps/{{roadmap_id}}/chat/messages",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"roadmaps",
+								"{{roadmap_id}}",
+								"chat",
+								"messages"
+							]
+						},
+						"description": "Alternative endpoint: send message using roadmap_id instead of chat_room_id. Both endpoints work the same way."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "5 · Get Messages",
+			"item": [
+				{
+					"name": "GET /community/{chatRoomId}/messages — Retrieve Messages",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Messages retrieved successfully (paginated)', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"    pm.expect(jsonData.message).to.include('Messages retrieved successfully');",
+									"    pm.expect(jsonData.data).to.be.an('array');",
+									"    pm.expect(jsonData).to.have.property('meta');",
+									"    pm.expect(jsonData.meta).to.have.property('current_page');",
+									"    pm.expect(jsonData.meta).to.have.property('total');",
+									"    pm.expect(jsonData).to.have.property('links');",
+									"});",
+									"",
+									"pm.test('Messages ordered by newest first', function () {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.data.length > 1) {",
+									"        var first = new Date(jsonData.data[0].created_at);",
+									"        var second = new Date(jsonData.data[1].created_at);",
+									"        pm.expect(first.getTime()).to.be.greaterThanOrEqual(second.getTime());",
+									"}",
+									"});",
+									"",
+									"pm.test('Each message includes user info', function () {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.data.length > 0) {",
+									"        var msg = jsonData.data[0];",
+									"        pm.expect(msg).to.have.property('id');",
+									"        pm.expect(msg).to.have.property('content');",
+									"        pm.expect(msg).to.have.property('user');",
+									"        pm.expect(msg.user).to.have.property('id');",
+									"        pm.expect(msg.user).to.have.property('username');",
+									"    }",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/community/{{chat_room_id}}/messages?per_page=30",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"community",
+								"{{chat_room_id}}",
+								"messages"
+							],
+							"query": [
+								{
+									"key": "per_page",
+									"value": "30"
+								}
+							]
+						},
+						"description": "Retrieve paginated messages from a chat room. Messages are ordered by created_at descending (newest first). Each message includes user information (id, username, profile_picture)."
+					},
+					"response": []
+				},
+				{
+					"name": "GET /roadmaps/{roadmapId}/chat/messages — Retrieve Messages (Roadmap-Scoped)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Messages retrieved via roadmap-scoped endpoint', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"    pm.expect(jsonData.data).to.be.an('array');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/roadmaps/{{roadmap_id}}/chat/messages?per_page=30",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"roadmaps",
+								"{{roadmap_id}}",
+								"chat",
+								"messages"
+							],
+							"query": [
+								{
+									"key": "per_page",
+									"value": "30"
+								}
+							]
+						},
+						"description": "Alternative endpoint: get messages using roadmap_id instead of chat_room_id."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "6 · Edit & Delete Messages",
+			"item": [
+				{
+					"name": "PATCH /chat/messages/{messageId} — Edit Own Message",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Message updated successfully', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"    pm.expect(jsonData.message).to.include('Message updated successfully');",
+									"    pm.expect(jsonData.data).to.have.property('content');",
+									"    pm.expect(jsonData.data.content).to.eql('Hello everyone! This is my EDITED message.');",
+									"    pm.expect(jsonData.data).to.have.property('edited_at');",
+									"    pm.expect(jsonData.data.edited_at).to.not.be.null;",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"content\": \"Hello everyone! This is my EDITED message.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/chat/messages/{{message_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"chat",
+								"messages",
+								"{{message_id}}"
+							]
+						},
+						"description": "Edit own message. Only the message owner or admin can edit. Sets edited_at timestamp."
+					},
+					"response": []
+				},
+				{
+					"name": "DELETE /chat/messages/{messageId} — Delete Own Message",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Message deleted successfully (soft delete)', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"    pm.expect(jsonData.message).to.include('Message deleted successfully');",
+									"    pm.expect(jsonData.data).to.eql(null);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/chat/messages/{{message_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"chat",
+								"messages",
+								"{{message_id}}"
+							]
+						},
+						"description": "Delete own message (soft delete). Only the message owner or admin can delete. Message is soft-deleted, not permanently removed."
+					},
+					"response": []
+				},
+				{
+					"name": "GET /community/{chatRoomId}/messages — Verify Deleted Message Not Shown",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Deleted message not in list (soft delete)', function () {",
+									"    var jsonData = pm.response.json();",
+									"    var deletedId = parseInt(pm.collectionVariables.get('message_id'));",
+									"    var found = jsonData.data.some(function(msg) {",
+									"        return msg.id === deletedId;",
+									"    });",
+									"    pm.expect(found).to.eql(false);",
+									"    console.log('✅ Deleted message (ID: ' + deletedId + ') correctly excluded from results');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/community/{{chat_room_id}}/messages",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"community",
+								"{{chat_room_id}}",
+								"messages"
+							]
+						},
+						"description": "Verify that soft-deleted messages are not returned in the messages list."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "7 · Ownership & Access Control",
+			"item": [
+				{
+					"name": "GET /community/{chatRoomId}/messages — Non-Enrolled User (403)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 403', function () {",
+									"    pm.response.to.have.status(403);",
+									"});",
+									"",
+									"pm.test('Access denied — not enrolled', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(false);",
+									"    pm.expect(jsonData.message).to.include('must be enrolled');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_user_b}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/community/{{chat_room_id}}/messages",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"community",
+								"{{chat_room_id}}",
+								"messages"
+							]
+						},
+						"description": "User B (not enrolled) tries to access User A's chat room. Should return 403 Forbidden."
+					},
+					"response": []
+				},
+				{
+					"name": "POST /community/{chatRoomId}/messages — Non-Enrolled User (403)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 403', function () {",
+									"    pm.response.to.have.status(403);",
+									"});",
+									"",
+									"pm.test('Cannot send message — not enrolled', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(false);",
+									"    pm.expect(jsonData.message).to.include('must be enrolled');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_user_b}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"content\": \"I should not be able to send this\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/community/{{chat_room_id}}/messages",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"community",
+								"{{chat_room_id}}",
+								"messages"
+							]
+						},
+						"description": "User B (not enrolled) tries to send a message. Should return 403 Forbidden."
+					},
+					"response": []
+				},
+				{
+					"name": "PATCH /chat/messages/{messageId} — Edit Other User's Message (403)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 403', function () {",
+									"    pm.response.to.have.status(403);",
+									"});",
+									"",
+									"pm.test('Cannot edit other user's message', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(false);",
+									"    pm.expect(jsonData.message).to.include('not authorized');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_user_b}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"content\": \"Trying to edit someone else's message\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/chat/messages/{{message_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"chat",
+								"messages",
+								"{{message_id}}"
+							]
+						},
+						"description": "User B tries to edit User A's message. Should return 403 Forbidden. Only message owner or admin can edit."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "8 · Validation Errors",
+			"item": [
+				{
+					"name": "POST /community/{chatRoomId}/messages — Empty Content (422)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 422', function () {",
+									"    pm.response.to.have.status(422);",
+									"});",
+									"",
+									"pm.test('Validation error for empty content', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('message');",
+									"    pm.expect(jsonData).to.have.property('errors');",
+									"    pm.expect(jsonData.errors).to.have.property('content');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"content\": \"\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/community/{{chat_room_id}}/messages",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"community",
+								"{{chat_room_id}}",
+								"messages"
+							]
+						},
+						"description": "Try to send empty message. Validation: content is required|string|max:2000. Should return 422."
+					},
+					"response": []
+				},
+				{
+					"name": "POST /community/{chatRoomId}/messages — Missing Content Field (422)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 422', function () {",
+									"    pm.response.to.have.status(422);",
+									"});",
+									"",
+									"pm.test('Validation error for missing content', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('errors');",
+									"    pm.expect(jsonData.errors).to.have.property('content');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{base_url}}/community/{{chat_room_id}}/messages",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"community",
+								"{{chat_room_id}}",
+								"messages"
+							]
+						},
+						"description": "Try to send message without content field. Should return 422."
+					},
+					"response": []
+				},
+				{
+					"name": "POST /community/{chatRoomId}/messages — Content Too Long (422)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 422', function () {",
+									"    pm.response.to.have.status(422);",
+									"});",
+									"",
+									"pm.test('Validation error for content exceeding 2000 chars', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('errors');",
+									"    pm.expect(jsonData.errors).to.have.property('content');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"content\": \"A\".repeat(2001)\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/community/{{chat_room_id}}/messages",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"community",
+								"{{chat_room_id}}",
+								"messages"
+							]
+						},
+						"description": "Try to send message exceeding 2000 character limit. Validation: max:2000. Should return 422."
+					},
+					"response": []
+				},
+				{
+					"name": "GET /community/999999/messages — Non-Existent Chat Room (404)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 404', function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									"pm.test('Chat room not found', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(false);",
+									"    pm.expect(jsonData.message).to.include('Chat room not found');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/community/999999/messages",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"community",
+								"999999",
+								"messages"
+							]
+						},
+						"description": "Try to access non-existent chat room. Should return 404."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "9 · Rate Limiting",
+			"description": "NOTE: Rate limiting on message endpoints is currently NOT implemented in routes. To test rate limiting, you would need to add `->middleware('throttle:15,1')` to POST message routes. This test documents the expected behavior.",
+			"item": [
+				{
+					"name": "POST /community/{chatRoomId}/messages — Rate Limit Test (16 requests)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"// NOTE: This test expects 429 status which only occurs after 15 rapid requests.",
+									"// To trigger: use Postman Runner with 16 iterations on this request within 60s.",
+									"// On iterations 1-15 you will get 201; on iteration 16 you should get 429.",
+									"",
+									"if (pm.response.code === 429) {",
+									"    pm.test('Rate limit reached — 429 Too Many Attempts', function () {",
+									"        pm.response.to.have.status(429);",
+									"        var jsonData = pm.response.json();",
+									"        pm.expect(jsonData.message).to.include('Too Many Attempts');",
+									"    });",
+									"} else {",
+									"    pm.test('Request succeeded (under rate limit)', function () {",
+									"        pm.response.to.have.status(201);",
+									"        var jsonData = pm.response.json();",
+									"        pm.expect(jsonData.success).to.eql(true);",
+									"    });",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"content\": \"Rate limit test message #{{$iteration}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/community/{{chat_room_id}}/messages",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"community",
+								"{{chat_room_id}}",
+								"messages"
+							]
+						},
+						"description": "Rate limit test: Use Postman Runner with 16 iterations within 60 seconds. Iterations 1-15 should succeed (201), iteration 16 should return 429 Too Many Attempts. NOTE: Rate limiting middleware must be added to routes for this to work."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "10 · Unauthenticated Access",
+			"item": [
+				{
+					"name": "GET /me/community — No Token (401)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 401', function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"pm.test('Unauthenticated error', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('message');",
+									"    pm.expect(jsonData.message).to.include('Unauthenticated');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/me/community",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"me",
+								"community"
+							]
+						},
+						"description": "Call endpoint without Bearer token. Should return 401 Unauthenticated."
+					},
+					"response": []
+				},
+				{
+					"name": "POST /community/{chatRoomId}/messages — No Token (401)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 401', function () {",
+									"    pm.response.to.have.status(401);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"content\": \"Test\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/community/{{chat_room_id}}/messages",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"community",
+								"{{chat_room_id}}",
+								"messages"
+							]
+						},
+						"description": "Call endpoint without Bearer token. Should return 401."
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ChatMessage;
 use App\Models\ChatModeration;
+use App\Models\ChatRoom;
 use App\Models\Roadmap;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -253,6 +254,112 @@ class ChatMessageController extends Controller
         }
 
         return null; // no restriction
+    }
+
+    /**
+     * GET /community/{chatRoomId}/messages
+     * Get messages by chat room ID (alternative to roadmap-scoped endpoint)
+     */
+    public function indexByRoom(Request $request, $chatRoomId)
+    {
+        try {
+            $user = $request->user();
+            $chatRoom = ChatRoom::with('roadmap')->findOrFail($chatRoomId);
+
+            if (!$chatRoom->is_active) {
+                return $this->errorResponse(
+                    'Chat room is not available.',
+                    null,
+                    404
+                );
+            }
+
+            // Access: enrolled OR admin/tech_admin
+            if (!$this->canAccessChat($user, $chatRoom->roadmap)) {
+                return $this->errorResponse(
+                    'You must be enrolled in this roadmap to view its chat.',
+                    null,
+                    403
+                );
+            }
+
+            $messages = ChatMessage::where('chat_room_id', $chatRoom->id)
+                ->with('user:id,username,profile_picture')
+                ->orderByDesc('created_at')
+                ->paginate($request->get('per_page', 30));
+
+            return $this->paginatedResponse($messages, 'Messages retrieved successfully');
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return $this->errorResponse('Chat room not found.', null, 404);
+        } catch (\Exception $e) {
+            return $this->errorResponse(
+                'Failed to retrieve messages.',
+                config('app.debug') ? ['error' => $e->getMessage()] : null,
+                Response::HTTP_INTERNAL_SERVER_ERROR
+            );
+        }
+    }
+
+    /**
+     * POST /community/{chatRoomId}/messages
+     * Send message by chat room ID (alternative to roadmap-scoped endpoint)
+     */
+    public function storeByRoom(Request $request, $chatRoomId)
+    {
+        try {
+            $user = $request->user();
+            $chatRoom = ChatRoom::with('roadmap')->findOrFail($chatRoomId);
+
+            if (!$chatRoom->is_active) {
+                return $this->errorResponse(
+                    'Chat room is not available.',
+                    null,
+                    404
+                );
+            }
+
+            // Must be enrolled
+            if (!$user->hasEnrolled($chatRoom->roadmap->id)) {
+                return $this->errorResponse(
+                    'You must be enrolled in this roadmap to send messages.',
+                    null,
+                    403
+                );
+            }
+
+            // Check mute / ban
+            $moderationCheck = $this->checkModeration($chatRoom->id, $user->id);
+            if ($moderationCheck) {
+                return $moderationCheck;
+            }
+
+            $validated = $request->validate([
+                'content' => 'required|string|max:2000',
+            ]);
+
+            $message = ChatMessage::create([
+                'chat_room_id' => $chatRoom->id,
+                'user_id'      => $user->id,
+                'content'      => $validated['content'],
+                'sent_at'      => now(),
+            ]);
+
+            $message->load('user:id,username,profile_picture');
+
+            return $this->successResponse($message, 'Message sent successfully', 201);
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return $this->errorResponse('Chat room not found.', null, 404);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return $this->errorResponse('Validation failed.', $e->errors(), 422);
+        } catch (\Exception $e) {
+            return $this->errorResponse(
+                'Failed to send message.',
+                config('app.debug') ? ['error' => $e->getMessage()] : null,
+                Response::HTTP_INTERNAL_SERVER_ERROR
+            );
+        }
     }
 }
 

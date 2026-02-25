@@ -1,0 +1,950 @@
+{
+	"info": {
+		"_postman_id": "chatbot-openai-test-collection-v2",
+		"name": "Smart Teacher Chatbot — OpenAI Integration Tests",
+		"description": "Postman Collection v2.1 for testing the Smart Teacher Chatbot with OpenAI GPT-3.5 Turbo integration.\n\nArchitecture: ChatbotController → ChatbotReplyService → OpenAIProvider (LLMProviderInterface)\n\nProvider is config-driven via CHATBOT_PROVIDER env var. Set to 'openai' to use OpenAI GPT-3.5-turbo.\nFallback: if OpenAI fails, DummyProvider (rule-based) responds automatically.\n\nAll chatbot endpoints require auth:sanctum (Bearer token).\nPaginated endpoints return: success, message, data[], meta{}, links{}.\nNon-paginated success endpoints return: success, message, data.\nRate limit on POST message endpoints: throttle:15,1 (15 req/min).\n\nENV REQUIREMENTS:\n  CHATBOT_PROVIDER=openai\n  OPENAI_API_KEY=sk-...\n  OPENAI_MODEL=gpt-3.5-turbo  (optional, defaults to gpt-3.5-turbo)",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://roadmap_system.test/api/v1",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "session_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "session_id_quick",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "assistant_message_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "login_email",
+			"value": "testuser@example.com",
+			"type": "string"
+		},
+		{
+			"key": "login_password",
+			"value": "Password@123",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "1 · Auth Setup",
+			"item": [
+				{
+					"name": "Login — obtain Bearer token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Login successful — token received', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"    pm.expect(jsonData.data).to.have.property('token');",
+									"    pm.expect(jsonData.data.token).to.be.a('string').and.not.empty;",
+									"    pm.expect(jsonData.data).to.have.property('user');",
+									"    pm.expect(jsonData.data.token_type).to.eql('Bearer');",
+									"});",
+									"",
+									"// Auto-save token to collection variable",
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.token) {",
+									"    pm.collectionVariables.set('token', jsonData.data.token);",
+									"    console.log('✅ Token saved: ' + jsonData.data.token.substring(0, 20) + '...');",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"{{login_email}}\",\n    \"password\": \"{{login_password}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Authenticate and obtain a Sanctum Bearer token. The token is automatically saved to the {{token}} collection variable for use in subsequent requests."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "2 · Create Session",
+			"item": [
+				{
+					"name": "POST /chatbot/sessions — Create session with title",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 201', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('Session created successfully', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"    pm.expect(jsonData.message).to.include('Session created successfully');",
+									"    pm.expect(jsonData.data).to.have.property('id');",
+									"    pm.expect(jsonData.data.id).to.be.a('number');",
+									"    pm.expect(jsonData.data.title).to.eql('OpenAI GPT-3.5 Test Session');",
+									"    pm.expect(jsonData.data).to.have.property('user_id');",
+									"    pm.expect(jsonData.data).to.have.property('created_at');",
+									"});",
+									"",
+									"// Auto-save session_id",
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.id) {",
+									"    pm.collectionVariables.set('session_id', jsonData.data.id);",
+									"    console.log('✅ session_id saved: ' + jsonData.data.id);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"OpenAI GPT-3.5 Test Session\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/chatbot/sessions",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"chatbot",
+								"sessions"
+							]
+						},
+						"description": "Create a new chatbot session. Title is optional (nullable|string|max:255). The session_id is automatically extracted and saved for subsequent message requests."
+					},
+					"response": []
+				},
+				{
+					"name": "POST /chatbot/sessions — Create session without title",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 201', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('Session created with null title', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"    pm.expect(jsonData.data).to.have.property('id');",
+									"    pm.expect(jsonData.data.title).to.eql(null);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{base_url}}/chatbot/sessions",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"chatbot",
+								"sessions"
+							]
+						},
+						"description": "Create session with no title to verify nullable validation works."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "3 · Send Message (OpenAI Reply)",
+			"item": [
+				{
+					"name": "POST /chatbot/sessions/{id}/messages — Send message, get AI reply",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 201', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('OpenAI reply generated with user and assistant messages', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"    pm.expect(jsonData.message).to.include('Reply generated successfully');",
+									"",
+									"    // Session metadata returned",
+									"    pm.expect(jsonData.data).to.have.property('session');",
+									"    pm.expect(jsonData.data.session).to.have.property('id');",
+									"    pm.expect(jsonData.data.session).to.have.property('last_activity_at');",
+									"",
+									"    // User message stored correctly",
+									"    pm.expect(jsonData.data).to.have.property('user_message');",
+									"    pm.expect(jsonData.data.user_message.role).to.eql('user');",
+									"    pm.expect(jsonData.data.user_message.body).to.eql('What is a closure in PHP? Give a short example.');",
+									"",
+									"    // AI-generated assistant reply",
+									"    pm.expect(jsonData.data).to.have.property('assistant_message');",
+									"    pm.expect(jsonData.data.assistant_message.role).to.eql('assistant');",
+									"    pm.expect(jsonData.data.assistant_message.body).to.be.a('string');",
+									"    pm.expect(jsonData.data.assistant_message.body.length).to.be.greaterThan(10);",
+									"    pm.expect(jsonData.data.assistant_message).to.have.property('id');",
+									"    pm.expect(jsonData.data.assistant_message.id).to.be.a('number');",
+									"});",
+									"",
+									"pm.test('tokens_used is present (OpenAI returns usage data)', function () {",
+									"    var jsonData = pm.response.json();",
+									"    // tokens_used should be a number when using OpenAI (null for DummyProvider)",
+									"    var tokens = jsonData.data.assistant_message.tokens_used;",
+									"    if (tokens !== null) {",
+									"        pm.expect(tokens).to.be.a('number');",
+									"        pm.expect(tokens).to.be.greaterThan(0);",
+									"        console.log('✅ OpenAI tokens used: ' + tokens);",
+									"    } else {",
+									"        console.warn('⚠️ tokens_used is null — DummyProvider fallback may be active');",
+									"    }",
+									"});",
+									"",
+									"// Extract assistant_message_id",
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.assistant_message) {",
+									"    pm.collectionVariables.set('assistant_message_id', jsonData.data.assistant_message.id);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"message\": \"What is a closure in PHP? Give a short example.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/chatbot/sessions/{{session_id}}/messages",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"chatbot",
+								"sessions",
+								"{{session_id}}",
+								"messages"
+							]
+						},
+						"description": "Send a message to the chatbot session. The ChatbotReplyService calls the configured LLM provider (OpenAI GPT-3.5-turbo when CHATBOT_PROVIDER=openai). The system prompt is enriched with the student's enrollment and progress data. The response includes both the stored user_message and the AI-generated assistant_message with tokens_used."
+					},
+					"response": []
+				},
+				{
+					"name": "POST /chatbot/sessions/{id}/messages — Follow-up message (context test)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 201', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('Follow-up reply is context-aware', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"    pm.expect(jsonData.data.assistant_message.role).to.eql('assistant');",
+									"    pm.expect(jsonData.data.assistant_message.body).to.be.a('string');",
+									"    pm.expect(jsonData.data.assistant_message.body.length).to.be.greaterThan(10);",
+									"    console.log('✅ AI follow-up reply length: ' + jsonData.data.assistant_message.body.length + ' chars');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"message\": \"Can you show me another example of closures using array_filter?\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/chatbot/sessions/{{session_id}}/messages",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"chatbot",
+								"sessions",
+								"{{session_id}}",
+								"messages"
+							]
+						},
+						"description": "Send a follow-up message to verify the AI uses conversation context (last 10 messages are sent to OpenAI as context). The reply should be relevant to the previous closure discussion."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "4 · Get Messages",
+			"item": [
+				{
+					"name": "GET /chatbot/sessions/{id}/messages — Retrieve conversation history",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Messages retrieved with pagination', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"    pm.expect(jsonData.message).to.include('Messages retrieved successfully');",
+									"    pm.expect(jsonData.data).to.be.an('array');",
+									"    pm.expect(jsonData).to.have.property('meta');",
+									"    pm.expect(jsonData.meta).to.have.property('current_page');",
+									"    pm.expect(jsonData.meta).to.have.property('total');",
+									"    pm.expect(jsonData).to.have.property('links');",
+									"});",
+									"",
+									"pm.test('Messages contain user and assistant pairs', function () {",
+									"    var jsonData = pm.response.json();",
+									"    // After 2 sends: should have 4 messages (2 user + 2 assistant)",
+									"    pm.expect(jsonData.meta.total).to.eql(4);",
+									"    pm.expect(jsonData.data[0].role).to.eql('user');",
+									"    pm.expect(jsonData.data[1].role).to.eql('assistant');",
+									"    pm.expect(jsonData.data[2].role).to.eql('user');",
+									"    pm.expect(jsonData.data[3].role).to.eql('assistant');",
+									"    console.log('✅ 4 messages found (2 rounds of user+assistant)');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/chatbot/sessions/{{session_id}}/messages?per_page=30",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"chatbot",
+								"sessions",
+								"{{session_id}}",
+								"messages"
+							],
+							"query": [
+								{
+									"key": "per_page",
+									"value": "30"
+								}
+							]
+						},
+						"description": "Retrieve paginated messages for a chatbot session. Messages are ordered by created_at ascending. Each message has: id, chatbot_session_id, role (user|assistant), body, tokens_used, created_at."
+					},
+					"response": []
+				},
+				{
+					"name": "GET /chatbot/sessions — List all sessions",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Sessions list returned with pagination', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"    pm.expect(jsonData.message).to.include('Sessions retrieved successfully');",
+									"    pm.expect(jsonData.data).to.be.an('array');",
+									"    pm.expect(jsonData.data.length).to.be.greaterThan(0);",
+									"    pm.expect(jsonData).to.have.property('meta');",
+									"    pm.expect(jsonData.meta).to.have.property('total');",
+									"    pm.expect(jsonData).to.have.property('links');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/chatbot/sessions?per_page=10",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"chatbot",
+								"sessions"
+							],
+							"query": [
+								{
+									"key": "per_page",
+									"value": "10"
+								}
+							]
+						},
+						"description": "List the authenticated user's chatbot sessions, ordered by last_activity_at descending."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "5 · Quick Send",
+			"item": [
+				{
+					"name": "POST /chatbot/messages — Quick send (auto-create session)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 201', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('Quick send auto-created session with OpenAI reply', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"    pm.expect(jsonData.message).to.include('Reply generated successfully');",
+									"",
+									"    // New session was auto-created",
+									"    pm.expect(jsonData.data.session).to.have.property('id');",
+									"    pm.expect(jsonData.data.session.id).to.be.a('number');",
+									"    pm.expect(jsonData.data.session.title).to.be.a('string').and.not.empty;",
+									"",
+									"    // Messages present",
+									"    pm.expect(jsonData.data.user_message.role).to.eql('user');",
+									"    pm.expect(jsonData.data.assistant_message.role).to.eql('assistant');",
+									"    pm.expect(jsonData.data.assistant_message.body.length).to.be.greaterThan(10);",
+									"});",
+									"",
+									"pm.test('Session title = first 50 chars of message', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data.session.title).to.eql('How do I use Laravel middleware to protect routes?');",
+									"});",
+									"",
+									"// Auto-save session_id_quick",
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.session && jsonData.data.session.id) {",
+									"    pm.collectionVariables.set('session_id_quick', jsonData.data.session.id);",
+									"    console.log('✅ session_id_quick saved: ' + jsonData.data.session.id);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"message\": \"How do I use Laravel middleware to protect routes?\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/chatbot/messages",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"chatbot",
+								"messages"
+							]
+						},
+						"description": "Mobile-friendly quick send: no session_id provided → system auto-creates a new session with title = first 50 chars of the message. Then calls ChatbotReplyService → OpenAIProvider → returns AI reply."
+					},
+					"response": []
+				},
+				{
+					"name": "POST /chatbot/messages — Quick send with existing session_id",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 201', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('Message sent to existing session via quick send', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"    pm.expect(jsonData.data).to.have.property('user_message');",
+									"    pm.expect(jsonData.data).to.have.property('assistant_message');",
+									"});",
+									"",
+									"pm.test('Session ID matches provided session_id_quick', function () {",
+									"    var jsonData = pm.response.json();",
+									"    var expectedId = parseInt(pm.collectionVariables.get('session_id_quick'));",
+									"    pm.expect(jsonData.data.session.id).to.eql(expectedId);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"message\": \"Can you explain route groups in Laravel?\",\n    \"session_id\": {{session_id_quick}}\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/chatbot/messages",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"chatbot",
+								"messages"
+							]
+						},
+						"description": "Quick send with an existing session_id — routes the message to the specified session instead of creating a new one."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "6 · Delete Session",
+			"item": [
+				{
+					"name": "DELETE /chatbot/sessions/{id} — Delete session",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Session deleted successfully (cascade deletes messages)', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"    pm.expect(jsonData.message).to.include('Session deleted successfully');",
+									"    pm.expect(jsonData.data).to.eql(null);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/chatbot/sessions/{{session_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"chatbot",
+								"sessions",
+								"{{session_id}}"
+							]
+						},
+						"description": "Delete a chatbot session. All messages are cascade-deleted via foreign key constraint (cascadeOnDelete on chatbot_messages.chatbot_session_id)."
+					},
+					"response": []
+				},
+				{
+					"name": "GET /chatbot/sessions/{id}/messages — Verify deleted session returns 404",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 404', function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									"pm.test('Deleted session returns not found', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(false);",
+									"    pm.expect(jsonData.message).to.include('Session not found');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/chatbot/sessions/{{session_id}}/messages",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"chatbot",
+								"sessions",
+								"{{session_id}}",
+								"messages"
+							]
+						},
+						"description": "Verify that accessing a deleted session returns 404."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "7 · Error Handling & Edge Cases",
+			"item": [
+				{
+					"name": "GET /chatbot/sessions — Unauthenticated (no token) → 401",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 401', function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"pm.test('Unauthenticated error message', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('message');",
+									"    pm.expect(jsonData.message).to.include('Unauthenticated');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/chatbot/sessions",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"chatbot",
+								"sessions"
+							]
+						},
+						"description": "Calling any chatbot endpoint without Bearer token must return 401."
+					},
+					"response": []
+				},
+				{
+					"name": "POST /chatbot/sessions/{id}/messages — Missing message field → 422",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 422', function () {",
+									"    pm.response.to.have.status(422);",
+									"});",
+									"",
+									"pm.test('Validation error for missing message', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('message');",
+									"    pm.expect(jsonData).to.have.property('errors');",
+									"    pm.expect(jsonData.errors).to.have.property('message');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{base_url}}/chatbot/sessions/{{session_id_quick}}/messages",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"chatbot",
+								"sessions",
+								"{{session_id_quick}}",
+								"messages"
+							]
+						},
+						"description": "Send request without message field. Validation rule: message is required|string|max:5000. Should return 422."
+					},
+					"response": []
+				},
+				{
+					"name": "POST /chatbot/sessions/999999/messages — Non-existing session → 404",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status code is 404', function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									"pm.test('Session not found', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(false);",
+									"    pm.expect(jsonData.message).to.include('Session not found');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"message\": \"Hello?\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/chatbot/sessions/999999/messages",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"chatbot",
+								"sessions",
+								"999999",
+								"messages"
+							]
+						},
+						"description": "Attempt to send a message to a session ID that does not exist."
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}

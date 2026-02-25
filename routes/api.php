@@ -118,7 +118,13 @@ Route::middleware('auth:sanctum')->group(function () {
 | Community (Authenticated users)
 |--------------------------------------------------------------------------
 */
-Route::middleware('auth:sanctum')->get('/me/community', [CommunityController::class, 'myCommunityRooms']);
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/me/community', [CommunityController::class, 'myCommunityRooms']);
+    
+    // Chat room-scoped endpoints (alternative to roadmap-scoped)
+    Route::get('/community/{chatRoomId}/messages', [ChatMessageController::class, 'indexByRoom']);
+    Route::post('/community/{chatRoomId}/messages', [ChatMessageController::class, 'storeByRoom']);
+});
 
 /*
 |--------------------------------------------------------------------------

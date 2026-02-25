@@ -23,11 +23,8 @@ class ChatMessage extends Model
         'edited_at' => 'datetime',
     ];
 
-<<<<<<< Current (Your changes)
     /* ---- Relationships ---- */
 
-=======
->>>>>>> Incoming (Background Agent changes)
     public function chatRoom()
     {
         return $this->belongsTo(ChatRoom::class);
