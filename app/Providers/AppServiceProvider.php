@@ -1,16 +1,18 @@
 <?php
 
 namespace App\Providers;
-
+use Illuminate\View\ViewServiceProvider;
+use Illuminate\Session\SessionServiceProvider;
+use Illuminate\Cookie\CookieServiceProvider;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
-
 // Models
 use App\Models\Quiz;
 use App\Models\QuizAttempt;
 use App\Models\Challenge;
 use App\Models\ChallengeAttempt;
 use App\Models\ChatMessage;
+use App\Models\User;
 
 // Policies
 use App\Policies\QuizPolicy;
@@ -18,6 +20,7 @@ use App\Policies\QuizAttemptPolicy;
 use App\Policies\ChallengePolicy;
 use App\Policies\ChallengeAttemptPolicy;
 use App\Policies\ChatMessagePolicy;
+use App\Policies\UserPolicy;
 
 use App\Services\Compiler\CompilerServiceInterface;
 use App\Services\Compiler\JdoodleCompilerService;
@@ -33,7 +36,7 @@ class AppServiceProvider extends ServiceProvider
     /**
      * Register any application services.
      */
-    public function register()
+    public function register(): void
     {
         $this->app->bind(
             CompilerServiceInterface::class,
@@ -62,5 +65,6 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Challenge::class, ChallengePolicy::class);
         Gate::policy(ChallengeAttempt::class, ChallengeAttemptPolicy::class);
         Gate::policy(ChatMessage::class, ChatMessagePolicy::class);
+        Gate::policy(User::class, UserPolicy::class);
     }
 }

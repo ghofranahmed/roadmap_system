@@ -78,6 +78,7 @@ class AdminUserController extends Controller
     public function update(Request $request, $id)
     {
         $user = User::findOrFail($id);
+        $currentAdmin = auth()->user();
 
         $validated = $request->validate([
             'username' => ['sometimes', 'string', 'max:255', Rule::unique('users')->ignore($user->id)],
@@ -85,6 +86,18 @@ class AdminUserController extends Controller
             'role' => ['sometimes', 'in:user,admin,tech_admin'],
             'password' => ['sometimes', 'string', 'min:8', 'confirmed'],
         ]);
+
+        // Prevent normal admin from assigning or changing role to tech_admin
+        // Normal admins can only assign: user, admin (not tech_admin)
+        if (isset($validated['role']) && $validated['role'] === 'tech_admin') {
+            if ($currentAdmin->isNormalAdmin()) {
+                return $this->errorResponse(
+                    'Unauthorized. Normal admins cannot assign technical admin role.',
+                    null,
+                    403
+                );
+            }
+        }
 
         // Update password if provided
         if (isset($validated['password'])) {
