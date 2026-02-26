@@ -5,16 +5,18 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\LearningUnitResource\Pages;
 use App\Models\LearningUnit;
 use Filament\Forms;
-use Filament\Forms\Form;
+use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use UnitEnum;
+use BackedEnum;
 
 class LearningUnitResource extends Resource
 {
     protected static ?string $model = LearningUnit::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-book-open';
+    protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-book-open';
 
     protected static ?string $navigationLabel = 'Learning Units';
 
@@ -22,7 +24,7 @@ class LearningUnitResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Learning Units';
 
-    protected static ?string $navigationGroup = 'Content Management';
+    protected static UnitEnum|string|null $navigationGroup = 'Content Management';
 
     protected static ?int $navigationSort = 2;
 
@@ -31,9 +33,9 @@ class LearningUnitResource extends Resource
         return auth()->user()?->isTechAdmin() ?? false;
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
+        return $schema
             ->schema([
                 Forms\Components\Select::make('roadmap_id')
                     ->relationship('roadmap', 'title')

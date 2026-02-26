@@ -37,7 +37,7 @@ return Application::configure(basePath: dirname(__DIR__))
                     'error'   => 'Unauthenticated',
                 ], 401);
             }
-            return redirect()->guest(route('login'));
+            return redirect()->guest(route('filament.admin.auth.login'));
         });
     })
     ->create();

@@ -5,18 +5,20 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\UserResource\Pages;
 use App\Models\User;
 use Filament\Forms;
-use Filament\Forms\Form;
+use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
+use UnitEnum;
+use BackedEnum;
 
 class UserResource extends Resource
 {
     protected static ?string $model = User::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-users';
+    protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-users';
 
     protected static ?string $navigationLabel = 'Users';
 
@@ -24,7 +26,7 @@ class UserResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Users';
 
-    protected static ?string $navigationGroup = 'User Management';
+    protected static UnitEnum|string|null $navigationGroup = 'User Management';
 
     protected static ?int $navigationSort = 1;
 
@@ -36,7 +38,7 @@ class UserResource extends Resource
         return $user?->isNormalAdmin() ?? false;
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
         $currentUser = auth()->user();
         $isNormalAdmin = $currentUser?->isNormalAdmin() ?? false;
@@ -59,7 +61,7 @@ class UserResource extends Resource
             ];
         }
 
-        return $form
+        return $schema
             ->schema([
                 Forms\Components\TextInput::make('username')
                     ->required()

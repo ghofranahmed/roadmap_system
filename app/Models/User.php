@@ -121,4 +121,15 @@ public function hasEnrolled($roadmapId)
     {
         return $this->hasMany(ChatbotSession::class);
     }
+
+    /**
+     * Get the name for Filament admin panel display.
+     * Filament v5 requires this method to return a non-null string.
+     * 
+     * @return string Always returns a non-null string for Filament display
+     */
+    public function getFilamentName(): string
+    {
+        return (string) ($this->name ?? $this->email ?? 'Admin');
+    }
 }

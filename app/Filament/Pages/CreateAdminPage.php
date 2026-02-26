@@ -14,20 +14,22 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
+use UnitEnum;
+use BackedEnum;
 
 class CreateAdminPage extends Page implements HasForms
 {
     use InteractsWithForms;
 
-    protected static ?string $navigationIcon = 'heroicon-o-user-plus';
+    protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-user-plus';
 
-    protected static string $view = 'filament.pages.create-admin-page';
+    protected string $view = 'filament.pages.create-admin-page';
 
     protected static ?string $navigationLabel = 'Create Admin';
 
     protected static ?string $title = 'Create New Admin';
 
-    protected static ?string $navigationGroup = 'System';
+    protected static UnitEnum|string|null $navigationGroup = 'System';
 
     protected static ?int $navigationSort = 1;
 
