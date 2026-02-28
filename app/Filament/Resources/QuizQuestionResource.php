@@ -5,18 +5,16 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\QuizQuestionResource\Pages;
 use App\Models\QuizQuestion;
 use Filament\Forms;
-use Filament\Schemas\Schema;
+use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use UnitEnum;
-use BackedEnum;
 
 class QuizQuestionResource extends Resource
 {
     protected static ?string $model = QuizQuestion::class;
 
-    protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-chat-bubble-left-right';
+    protected static ?string $navigationIcon = 'heroicon-o-chat-bubble-left-right';
 
     protected static ?string $navigationLabel = 'Quiz Questions';
 
@@ -24,7 +22,7 @@ class QuizQuestionResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Quiz Questions';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Content Management';
+    protected static ?string $navigationGroup = 'Content Management';
 
     protected static ?int $navigationSort = 7;
 
@@ -33,9 +31,9 @@ class QuizQuestionResource extends Resource
         return auth()->user()?->isTechAdmin() ?? false;
     }
 
-    public static function form(Schema $schema): Schema
+    public static function form(Form $form): Form
     {
-        return $schema
+        return $form
             ->schema([
                 Forms\Components\Select::make('quiz_id')
                     ->relationship('quiz', 'id')

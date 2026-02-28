@@ -124,12 +124,68 @@ public function hasEnrolled($roadmapId)
 
     /**
      * Get the name for Filament admin panel display.
-     * Filament v5 requires this method to return a non-null string.
      * 
      * @return string Always returns a non-null string for Filament display
      */
     public function getFilamentName(): string
     {
-        return (string) ($this->name ?? $this->email ?? 'Admin');
+        return $this->name 
+            ?? $this->username 
+            ?? $this->email 
+            ?? 'Admin';
     }
+    public function canAccessPanel(Panel $panel): bool
+{
+    return $this->isAnyAdmin();
+}
+
+    /**
+     * Get the user's display name (for AdminLTE navbar).
+     * Returns username, email, or 'Admin' as fallback.
+     * This is accessed as $user->name in Blade templates.
+     * 
+     * @return string
+     */
+    public function getNameAttribute(): string
+    {
+        return $this->username ?? $this->email ?? 'Admin';
+    }
+
+    /**
+     * Get the user's image URL for AdminLTE.
+     * Returns profile_picture if available, or a default avatar.
+     * 
+     * @return string
+     */
+    public function adminlte_image(): string
+    {
+        if ($this->profile_picture) {
+            return asset('storage/' . $this->profile_picture);
+        }
+        // Return default AdminLTE user image
+        return asset('vendor/adminlte/dist/img/user2-160x160.jpg');
+    }
+
+    /**
+     * Get the user's description for AdminLTE user menu.
+     * Returns role or email as description.
+     * 
+     * @return string
+     */
+    public function adminlte_desc(): string
+    {
+        return ucfirst(str_replace('_', ' ', $this->role ?? 'user'));
+    }
+
+    /**
+     * Get the user's profile URL for AdminLTE.
+     * Returns null as we don't have a profile page yet.
+     * 
+     * @return string|null
+     */
+    public function adminlte_profile_url(): ?string
+    {
+        return null;
+    }
+    
 }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\CreateChatbotSessionRequest;
 use App\Http\Requests\SendChatbotMessageRequest;
 use App\Models\ChatbotSession;
+use App\Models\ChatbotSetting;
 use App\Services\Chatbot\ChatbotReplyService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -109,6 +110,31 @@ class ChatbotController extends Controller
      */
     private function processMessage(ChatbotSession $session, string $message): JsonResponse
     {
+        // Check if chatbot is enabled
+        $settings = ChatbotSetting::getSettings();
+        if (!$settings->is_enabled) {
+            // Store user message even if disabled
+            $userMessage = $session->messages()->create([
+                'role' => 'user',
+                'body' => $message,
+            ]);
+            
+            // Store disabled message response
+            $assistantMessage = $session->messages()->create([
+                'role' => 'assistant',
+                'body' => 'Smart Teacher is temporarily disabled by admin. Please try again later.',
+                'tokens_used' => null,
+            ]);
+
+            $session->update(['last_activity_at' => now()]);
+
+            return $this->successResponse([
+                'session'           => $session->only(['id', 'title', 'last_activity_at']),
+                'user_message'      => $userMessage,
+                'assistant_message' => $assistantMessage,
+            ], 'Chatbot is currently disabled', 200);
+        }
+
         // Store user message
         $userMessage = $session->messages()->create([
             'role' => 'user',

@@ -5,18 +5,16 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\ChallengeResource\Pages;
 use App\Models\Challenge;
 use Filament\Forms;
-use Filament\Schemas\Schema;
+use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use UnitEnum;
-use BackedEnum;
 
 class ChallengeResource extends Resource
 {
     protected static ?string $model = Challenge::class;
 
-    protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-code-bracket';
+    protected static ?string $navigationIcon = 'heroicon-o-code-bracket';
 
     protected static ?string $navigationLabel = 'Challenges';
 
@@ -24,7 +22,7 @@ class ChallengeResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Challenges';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Content Management';
+    protected static ?string $navigationGroup = 'Content Management';
 
     protected static ?int $navigationSort = 8;
 
@@ -33,9 +31,9 @@ class ChallengeResource extends Resource
         return auth()->user()?->isTechAdmin() ?? false;
     }
 
-    public static function form(Schema $schema): Schema
+    public static function form(Form $form): Form
     {
-        return $schema
+        return $form
             ->schema([
                 Forms\Components\Select::make('learning_unit_id')
                     ->relationship('learningUnit', 'title')

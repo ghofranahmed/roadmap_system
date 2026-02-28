@@ -10,6 +10,9 @@ use Illuminate\Support\Facades\DB;
 
 class QuizPolicy
 {
+    /**
+     * Student-facing: can the user view this quiz?
+     */
     public function view(User $user, Quiz $quiz): bool
     {
         if (!$quiz->is_active) return false;
@@ -49,7 +52,34 @@ class QuizPolicy
         return $this->view($user, $quiz);
     }
 
+    /**
+     * Admin-facing: can the user manage quizzes in general?
+     */
     public function manage(User $user): bool
+    {
+        return $user->isTechAdmin();
+    }
+
+    /**
+     * Admin-facing: standard CRUD abilities for content management.
+     * Only technical admins can manage quiz content.
+     */
+    public function viewAny(User $user): bool
+    {
+        return $user->isTechAdmin();
+    }
+
+    public function create(User $user): bool
+    {
+        return $user->isTechAdmin();
+    }
+
+    public function update(User $user, Quiz $quiz): bool
+    {
+        return $user->isTechAdmin();
+    }
+
+    public function delete(User $user, Quiz $quiz): bool
     {
         return $user->isTechAdmin();
     }

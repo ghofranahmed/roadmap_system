@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\SubLessonResource;
 use App\Models\Lesson;
 use App\Models\SubLesson;
 use App\Http\Requests\StoreSubLessonRequest;
 use App\Http\Requests\UpdateSubLessonRequest;
 use App\Http\Requests\ReorderSubLessonsRequest;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class SubLessonController extends Controller
@@ -17,14 +19,32 @@ class SubLessonController extends Controller
 
     /**
      * عرض الدروس الفرعية لدرس معين للمستخدم العادي
-     * GET /lessons/{lessonId}/sub-lessons
+     * GET /lessons/{lessonId}/sub-lessons?include=resources
      */
-    public function index($lessonId)
+    public function index(Request $request, $lessonId)
     {
-        $subLessons = SubLesson::where('lesson_id', $lessonId)
-            ->withCount('resources')
-            ->orderBy('position')
-            ->get(['id', 'description', 'position', 'created_at', 'lesson_id']);
+        $includeResources = $request->query('include') === 'resources';
+        
+        $query = SubLesson::where('lesson_id', $lessonId)
+            ->orderBy('position');
+        
+        if ($includeResources) {
+            $query->with(['resources' => function ($q) {
+                $q->select('id', 'title', 'type', 'language', 'link', 'sub_lesson_id', 'created_at');
+            }]);
+        } else {
+            $query->withCount('resources');
+        }
+        
+        $subLessons = $query->get(['id', 'description', 'position', 'created_at', 'lesson_id']);
+
+        // Use resource if include=resources, otherwise return plain array
+        if ($includeResources) {
+            return $this->successResponse(
+                SubLessonResource::collection($subLessons),
+                'Sub-lessons retrieved successfully'
+            );
+        }
 
         return $this->successResponse($subLessons);
     }
@@ -54,6 +74,8 @@ class SubLessonController extends Controller
      */
     public function adminIndex($lessonId)
     {
+        $this->authorize('viewAny', SubLesson::class);
+
         $subLessons = SubLesson::where('lesson_id', $lessonId)
             ->with(['resources' => function ($q) {
                 $q->select('id', 'title', 'type', 'language', 'link', 'sub_lesson_id', 'created_at');
@@ -70,6 +92,8 @@ class SubLessonController extends Controller
      */
     public function store(StoreSubLessonRequest $request, $lessonId)
     {
+        $this->authorize('create', SubLesson::class);
+
         $lesson = Lesson::findOrFail($lessonId);
 
         // Safe null handling: if no sub_lessons exist, max() returns null → treat as 0
@@ -91,6 +115,7 @@ class SubLessonController extends Controller
     public function update(UpdateSubLessonRequest $request, $subLessonId)
     {
         $subLesson = SubLesson::findOrFail($subLessonId);
+        $this->authorize('update', $subLesson);
 
         $data = $request->validated();
         unset($data['position']); // position changes only via reorder endpoint
@@ -121,6 +146,14 @@ class SubLessonController extends Controller
                 null,
                 422
             );
+        }
+
+        // Authorize reorder based on the first sub-lesson in the list
+        $firstSubLesson = SubLesson::where('lesson_id', $lessonId)
+            ->where('id', $sublessonIds[0] ?? null)
+            ->first();
+        if ($firstSubLesson) {
+            $this->authorize('reorder', $firstSubLesson);
         }
 
         DB::transaction(function () use ($sublessonIds, $lessonId) {
@@ -157,6 +190,7 @@ class SubLessonController extends Controller
     public function destroy($subLessonId)
     {
         $subLesson = SubLesson::findOrFail($subLessonId);
+        $this->authorize('delete', $subLesson);
         $lessonId = $subLesson->lesson_id;
         $subLesson->delete();
 

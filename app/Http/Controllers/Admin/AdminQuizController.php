@@ -28,6 +28,8 @@ class AdminQuizController extends Controller
 
     public function index()
     {
+        $this->authorize('viewAny', Quiz::class);
+
         $quizzes = Quiz::with(['learningUnit:id,title,roadmap_id', 'questions'])
             ->withCount('questions')
             ->paginate(request()->get('per_page', 15));
@@ -36,6 +38,8 @@ class AdminQuizController extends Controller
 
     public function store(StoreQuizRequest $request)
     {
+        $this->authorize('create', Quiz::class);
+
         $quiz = Quiz::create($request->validated());
         return $this->successResponse($quiz, 'Quiz created successfully', 201);
     }
@@ -43,19 +47,23 @@ class AdminQuizController extends Controller
     public function show($id)
     {
         $quiz = Quiz::with('questions')->findOrFail($id);
+        $this->authorize('view', $quiz);
         return $this->successResponse($quiz);
     }
 
     public function update(UpdateQuizRequest $request, $id)
     {
         $quiz = Quiz::findOrFail($id);
+        $this->authorize('update', $quiz);
         $quiz->update($request->validated());
         return $this->successResponse($quiz, 'Quiz updated successfully');
     }
 
     public function destroy($id)
     {
-        Quiz::findOrFail($id)->delete();
+        $quiz = Quiz::findOrFail($id);
+        $this->authorize('delete', $quiz);
+        $quiz->delete();
         return $this->successResponse(null, 'Quiz deleted successfully');
     }
 }

@@ -34,15 +34,14 @@ class LessonController extends Controller
      * عرض درس معين مع تفاصيله للمستخدم العادي
      * GET /lessons/{lessonId}
      */
-    public function show($learningUnitId, $lessonId)
+    public function show($lessonId)
     {
-        $lesson = Lesson::where('learning_unit_id', $learningUnitId)
-            ->where('id', $lessonId)
+        $lesson = Lesson::where('id', $lessonId)
             ->where('is_active', true)
             ->with(['subLessons' => function ($query) {
                 $query->orderBy('position');
             }])
-            ->firstOrFail(['id', 'title', 'description', 'position', 'created_at']);
+            ->firstOrFail(['id', 'learning_unit_id', 'title', 'description', 'position', 'is_active', 'created_at']);
 
         return $this->successResponse($lesson);
     }
@@ -57,6 +56,8 @@ class LessonController extends Controller
      */
     public function adminIndex($learningUnitId)
     {
+        $this->authorize('viewAny', Lesson::class);
+
         $lessons = Lesson::where('learning_unit_id', $learningUnitId)
             ->withCount('subLessons')
             ->orderBy('position')
@@ -71,6 +72,8 @@ class LessonController extends Controller
      */
     public function store(StoreLessonRequest $request, $unitId)
     {
+        $this->authorize('create', Lesson::class);
+
         $learningUnit = LearningUnit::findOrFail($unitId);
 
         $maxPosition = (int) $learningUnit->lessons()->max('position');
@@ -93,6 +96,7 @@ class LessonController extends Controller
     public function update(UpdateLessonRequest $request, $lessonId)
     {
         $lesson = Lesson::findOrFail($lessonId);
+        $this->authorize('update', $lesson);
 
         $data = $request->validated();
         unset($data['position']); // position changes only via reorder endpoint
@@ -123,6 +127,14 @@ class LessonController extends Controller
                 null,
                 422
             );
+        }
+
+        // Authorize reorder based on the first lesson in the list (they all belong to same unit)
+        $firstLesson = Lesson::where('learning_unit_id', $unitId)
+            ->where('id', $lessonIds[0] ?? null)
+            ->first();
+        if ($firstLesson) {
+            $this->authorize('reorder', $firstLesson);
         }
 
         DB::transaction(function () use ($lessonIds, $unitId) {
@@ -159,6 +171,7 @@ class LessonController extends Controller
     public function toggleActive($lessonId)
     {
         $lesson = Lesson::findOrFail($lessonId);
+        $this->authorize('toggleActive', $lesson);
         $lesson->is_active = !(bool) $lesson->is_active;
         $lesson->save();
 
@@ -176,6 +189,7 @@ class LessonController extends Controller
     public function destroy($lessonId)
     {
         $lesson = Lesson::findOrFail($lessonId);
+        $this->authorize('delete', $lesson);
         $unitId = $lesson->learning_unit_id;
         $lesson->delete();
 

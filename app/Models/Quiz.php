@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Quiz extends Model
 {
-    protected $fillable = ['learning_unit_id', 'is_active', 'max_xp', 'min_xp'];
+    protected $fillable = ['learning_unit_id', 'title', 'is_active', 'max_xp', 'min_xp'];
 
     protected $casts = [
         'is_active' => 'boolean',

@@ -24,6 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Alias for Middlewares
         $middleware->alias([
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
+            'is_admin' => \App\Http\Middleware\AdminMiddleware::class,
             'role' => \App\Http\Middleware\RoleMiddleware::class,
             'enrolled' => EnsureUserIsEnrolled::class,
         ]);
@@ -37,7 +38,10 @@ return Application::configure(basePath: dirname(__DIR__))
                     'error'   => 'Unauthenticated',
                 ], 401);
             }
-            return redirect()->guest(route('filament.admin.auth.login'));
+            // Filament route disabled - redirect to a default login route instead
+            // return redirect()->guest(route('filament.admin.auth.login'));
+            // TODO: Replace with your AdminLTE login route when ready
+            return redirect()->guest('/login');
         });
     })
     ->create();

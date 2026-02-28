@@ -3,6 +3,7 @@
 namespace App\Services\Chatbot;
 
 use App\Models\ChatbotSession;
+use App\Models\ChatbotSetting;
 use App\Models\Lesson;
 use App\Models\LessonTracking;
 use App\Models\RoadmapEnrollment;
@@ -11,12 +12,10 @@ use Illuminate\Support\Facades\Log;
 class ChatbotReplyService
 {
     private LLMProviderInterface $provider;
-    private DummyProvider $fallback;
 
     public function __construct(LLMProviderInterface $provider)
     {
         $this->provider = $provider;
-        $this->fallback = new DummyProvider();
     }
 
     /**
@@ -26,8 +25,18 @@ class ChatbotReplyService
      */
     public function generateReply(ChatbotSession $session, string $userMessage): array
     {
+        // Check if chatbot is enabled (from DB settings)
+        $settings = ChatbotSetting::getSettings();
+        if (!$settings->is_enabled) {
+            return [
+                'reply' => 'Smart Teacher is temporarily disabled by admin. Please try again later.',
+                'tokens_used' => null,
+            ];
+        }
+
         // 1. Build conversation context (last N messages)
-        $limit   = config('services.chatbot.max_context_messages', 10);
+        // Use DB setting if available, otherwise fallback to config
+        $limit = $settings->max_context_messages ?? config('services.chatbot.max_context_messages', 10);
         $context = $session->messages()
             ->orderByDesc('created_at')
             ->take($limit)
@@ -41,20 +50,12 @@ class ChatbotReplyService
         $metadata = $this->buildMetadata($session->user_id);
 
         // 3. Build system prompt and attach to metadata
-        $metadata['system_prompt'] = $this->buildSystemPrompt($metadata);
-
-        // 4. Call provider (with fallback on failure)
-        try {
-            return $this->provider->chat($context, $userMessage, $metadata);
-        } catch (\Throwable $e) {
-            Log::error('Chatbot provider failed, using fallback.', [
-                'provider' => get_class($this->provider),
-                'error'    => $e->getMessage(),
-            ]);
-
-            // Fallback: rule-based DummyProvider always works
-            return $this->fallback->chat($context, $userMessage, $metadata);
-        }
+        $metadata['system_prompt'] = $this->buildSystemPrompt($metadata, $settings);
+        
+        // 4. Call provider (STRICT: no fallback - let exceptions propagate)
+        // If provider fails, the exception will be caught by Laravel's exception handler
+        // and returned as a proper API error response.
+        return $this->provider->chat($context, $userMessage, $metadata);
     }
 
     /**
@@ -137,18 +138,23 @@ class ChatbotReplyService
     /**
      * Build the system prompt that tells the AI how to behave, enriched with student data.
      */
-    private function buildSystemPrompt(array $metadata): string
+    private function buildSystemPrompt(array $metadata, ChatbotSetting $settings): string
     {
-        $prompt  = "You are \"Smart Teacher\", a friendly and knowledgeable programming tutor "
-                 . "inside a roadmap-based learning platform. Help students learn programming, "
-                 . "answer questions, and guide their learning journey.\n\n";
-        $prompt .= "Rules:\n";
-        $prompt .= "- Be concise (2-4 short paragraphs max).\n";
-        $prompt .= "- Use simple language appropriate for the student's level.\n";
-        $prompt .= "- When explaining code, use short examples.\n";
-        $prompt .= "- Be encouraging and supportive.\n";
-        $prompt .= "- Answer in the same language the student uses (Arabic or English).\n";
-        $prompt .= "- Do not discuss topics unrelated to programming and technology.\n";
+        // Use custom template if provided, otherwise use default
+        if (!empty($settings->system_prompt_template)) {
+            $prompt = $settings->system_prompt_template;
+        } else {
+            $prompt  = "You are \"Smart Teacher\", a friendly and knowledgeable programming tutor "
+                     . "inside a roadmap-based learning platform. Help students learn programming, "
+                     . "answer questions, and guide their learning journey.\n\n";
+            $prompt .= "Rules:\n";
+            $prompt .= "- Be concise (2-4 short paragraphs max).\n";
+            $prompt .= "- Use simple language appropriate for the student's level.\n";
+            $prompt .= "- When explaining code, use short examples.\n";
+            $prompt .= "- Be encouraging and supportive.\n";
+            $prompt .= "- Answer in the same language the student uses (Arabic or English).\n";
+            $prompt .= "- Do not discuss topics unrelated to programming and technology.\n";
+        }
 
         $enrollments = $metadata['enrollments'] ?? [];
         $nextLessons = $metadata['next_lessons'] ?? [];

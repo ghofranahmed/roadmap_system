@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\EnrolledRoadmapResource;
 use App\Models\Roadmap;
 use App\Models\RoadmapEnrollment;
 use Illuminate\Http\Request;
@@ -65,6 +66,27 @@ class EnrollmentController extends Controller
             ->paginate($request->get('per_page', 15));
 
         return $this->paginatedResponse($enrollments, 'Enrollments retrieved successfully');
+    }
+
+    /**
+     * GET /api/me/enrolled-roadmaps
+     * Get enrolled roadmaps in roadmap-first format for mobile "My Account" tab
+     */
+    public function myEnrolledRoadmaps(Request $request)
+    {
+        $user = $request->user();
+
+        $enrollments = RoadmapEnrollment::where('user_id', $user->id)
+            ->with(['roadmap' => function ($query) {
+                $query->select('id', 'title', 'description', 'level', 'is_active');
+            }])
+            ->orderByDesc('started_at')
+            ->get();
+
+        return $this->successResponse(
+            EnrolledRoadmapResource::collection($enrollments),
+            'Enrolled roadmaps retrieved successfully'
+        );
     }
 
     /**

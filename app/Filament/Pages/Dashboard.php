@@ -3,13 +3,10 @@
 namespace App\Filament\Pages;
 
 use Filament\Pages\Dashboard as BaseDashboard;
-use BackedEnum;
 
 class Dashboard extends BaseDashboard
 {
-    protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-home';
-
-    protected string $view = 'filament.pages.dashboard';
+    protected static ?string $navigationIcon = 'heroicon-o-home';
 
     public function getHeading(): string
     {

@@ -33,6 +33,8 @@ class RoadmapController extends Controller
      */
     public function index(Request $request)
     {
+        $this->authorize('viewAny', Roadmap::class);
+
         try {
             $query = Roadmap::query();
             
@@ -78,6 +80,8 @@ class RoadmapController extends Controller
      */
     public function store(RoadmapRequest $request)
     {
+        $this->authorize('create', Roadmap::class);
+
         try {
             $roadmap = Roadmap::create($request->validated());
             
@@ -118,6 +122,8 @@ class RoadmapController extends Controller
                     $q->withCount('lessons')->orderBy('position');
                 }])
                 ->findOrFail($id);
+
+            $this->authorize('view', $roadmap);
             
             return $this->successResponse(new RoadmapResource($roadmap), 'تم جلب المسار بنجاح');
             
@@ -140,6 +146,7 @@ class RoadmapController extends Controller
     {
         try {
             $roadmap = Roadmap::findOrFail($id);
+            $this->authorize('update', $roadmap);
             $roadmap->update($request->validated());
             
             // مسح الكاش
@@ -166,6 +173,7 @@ class RoadmapController extends Controller
     {
         try {
             $roadmap = Roadmap::findOrFail($id);
+            $this->authorize('delete', $roadmap);
             
             // التحقق من عدم وجود اشتراكات نشطة
             if ($roadmap->enrollments()->where('status', 'active')->exists()) {
@@ -202,6 +210,7 @@ class RoadmapController extends Controller
     {
         try {
             $roadmap = Roadmap::findOrFail($id);
+            $this->authorize('toggleActive', $roadmap);
             
             $roadmap->update([
                 'is_active' => !$roadmap->is_active,
@@ -245,6 +254,8 @@ class RoadmapController extends Controller
                 },
                 'learningUnits',
             ])->findOrFail($id);
+
+            $this->authorize('view', $roadmap);
             
             return $this->successResponse([
                 'roadmap_id' => $roadmap->id,

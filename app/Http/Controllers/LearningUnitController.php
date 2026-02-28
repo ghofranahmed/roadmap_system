@@ -43,6 +43,8 @@ class LearningUnitController extends Controller
 
     public function adminIndex($roadmapId)
     {
+        $this->authorize('viewAny', \App\Models\LearningUnit::class);
+
         // قد يحتاج الأدمن لمعلومات أكثر تفصيلاً (مثل created_at)
         $units = LearningUnit::where('roadmap_id', $roadmapId)
             ->withCount(['lessons', 'quizzes', 'challenges'])
@@ -54,6 +56,8 @@ class LearningUnitController extends Controller
 
     public function store(StoreLearningUnitRequest $request, $roadmapId)
     {
+        $this->authorize('create', \App\Models\LearningUnit::class);
+
         // التأكد من وجود الـ Roadmap
         $roadmap = Roadmap::findOrFail($roadmapId);
 
@@ -71,6 +75,7 @@ class LearningUnitController extends Controller
     public function update(StoreLearningUnitRequest $request, $unitId)
     {
         $unit = LearningUnit::findOrFail($unitId);
+        $this->authorize('update', $unit);
 
         $data = $request->validated();
         unset($data['position']); // position changes only via reorder endpoint
@@ -84,6 +89,7 @@ class LearningUnitController extends Controller
     public function destroy($unitId)
     {
         $unit = LearningUnit::findOrFail($unitId);
+        $this->authorize('delete', $unit);
         $unit->delete();
 
         return $this->successResponse(null, 'Unit deleted successfully');
@@ -115,6 +121,8 @@ class LearningUnitController extends Controller
                 404
             );
         }
+
+        $this->authorize('reorder', $unit);
 
         $result = DB::transaction(function () use ($unit, $roadmapId, $newPosition) {
             // Step 1: Normalize positions to contiguous 1..N (fixes gaps & duplicates)
@@ -194,6 +202,7 @@ class LearningUnitController extends Controller
     public function toggleActive($unitId)
     {
         $unit = LearningUnit::findOrFail($unitId);
+        $this->authorize('toggleActive', $unit);
 
         // قلب القيمة الحالية بشكل آمن
         $unit->is_active = !(bool) $unit->is_active;

@@ -48,6 +48,8 @@ class ResourceController extends Controller
      */
     public function adminIndex($subLessonId)
     {
+        $this->authorize('viewAny', Resource::class);
+
         $resources = Resource::where('sub_lesson_id', $subLessonId)->get();
         
         return $this->successResponse($resources);
@@ -59,6 +61,8 @@ class ResourceController extends Controller
      */
     public function store(StoreResourceRequest $request, $subLessonId)
     {
+        $this->authorize('create', Resource::class);
+
         $subLesson = SubLesson::findOrFail($subLessonId);
         
         $resource = $subLesson->resources()->create([
@@ -78,6 +82,7 @@ class ResourceController extends Controller
     public function update(UpdateResourceRequest $request, $resourceId)
     {
         $resource = Resource::findOrFail($resourceId);
+        $this->authorize('update', $resource);
         $resource->update($request->validated());
         
         return $this->successResponse($resource, 'تم تحديث المصدر بنجاح');
@@ -90,6 +95,7 @@ class ResourceController extends Controller
     public function destroy($resourceId)
     {
         $resource = Resource::findOrFail($resourceId);
+        $this->authorize('delete', $resource);
         $resource->delete();
         
         return $this->successResponse(null, 'تم حذف المصدر بنجاح');
@@ -101,6 +107,8 @@ class ResourceController extends Controller
      */
     public function search(Request $request)
     {
+        $this->authorize('search', Resource::class);
+
         $query = Resource::query();
         
         if ($request->has('type')) {

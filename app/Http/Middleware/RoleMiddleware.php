@@ -19,18 +19,31 @@ class RoleMiddleware
 
         // غير مصادق
         if (!$user) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthenticated.',
-            ], 401);
+            // For API requests or JSON requests, return JSON
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthenticated.',
+                ], 401);
+            }
+            // For web requests, redirect to login
+            return redirect()->guest(route('login'));
         }
 
         // Check if user has one of the required roles
         if (!in_array($user->role, $roles)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized. Required role: ' . implode(' or ', $roles),
-            ], 403);
+            $requiredRoles = implode(' or ', $roles);
+            
+            // For API requests or JSON requests, return JSON
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized. Required role: ' . $requiredRoles,
+                ], 403);
+            }
+            
+            // For web requests, abort with 403 (will use custom error view)
+            abort(403, 'Unauthorized. Required role: ' . $requiredRoles);
         }
 
         return $next($request);

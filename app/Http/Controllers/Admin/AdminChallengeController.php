@@ -28,6 +28,8 @@ class AdminChallengeController extends Controller
     // ✅ (Unit has only ONE challenge)
     public function index(int $unitId)
     {
+        $this->authorize('viewAny', Challenge::class);
+
         $unit = LearningUnit::findOrFail($unitId);
 
         if ($unit->unit_type !== 'challenge') {
@@ -42,6 +44,8 @@ class AdminChallengeController extends Controller
     // ✅ updateOrCreate because unique(learning_unit_id)
     public function store(AdminChallengeRequest $request, int $unitId)
     {
+        $this->authorize('create', Challenge::class);
+
         $unit = LearningUnit::findOrFail($unitId);
 
         if ($unit->unit_type !== 'challenge') {
@@ -61,12 +65,14 @@ class AdminChallengeController extends Controller
     public function show(int $challengeId)
     {
         $challenge = Challenge::with('learningUnit')->findOrFail($challengeId);
+        $this->authorize('view', $challenge);
         return $this->successResponse($challenge);
     }
 
     public function update(AdminChallengeRequest $request, int $challengeId)
     {
         $challenge = Challenge::findOrFail($challengeId);
+        $this->authorize('update', $challenge);
         $challenge->update($request->validated());
 
         return $this->successResponse($challenge);
@@ -74,13 +80,16 @@ class AdminChallengeController extends Controller
 
     public function destroy(int $challengeId)
     {
-        Challenge::whereKey($challengeId)->delete();
+        $challenge = Challenge::findOrFail($challengeId);
+        $this->authorize('delete', $challenge);
+        $challenge->delete();
         return $this->successResponse(null, 'Challenge deleted successfully');
     }
 
     public function toggleActive(int $challengeId)
     {
         $challenge = Challenge::findOrFail($challengeId);
+        $this->authorize('update', $challenge);
         $challenge->is_active = !$challenge->is_active;
         $challenge->save();
 

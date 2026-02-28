@@ -26,6 +26,8 @@ class AdminQuizQuestionController extends Controller
 
     public function index($quizId)
     {
+        $this->authorize('viewAny', QuizQuestion::class);
+
         $questions = QuizQuestion::where('quiz_id', $quizId)
             ->orderBy('order')
             ->get();
@@ -35,6 +37,8 @@ class AdminQuizQuestionController extends Controller
 
     public function store(\App\Http\Requests\StoreQuizQuestionRequest $request, $quizId)
     {
+        $this->authorize('create', QuizQuestion::class);
+
         $data = $request->validated();
         $data['quiz_id'] = $quizId;
 
@@ -46,6 +50,7 @@ class AdminQuizQuestionController extends Controller
     public function update(\App\Http\Requests\UpdateQuizQuestionRequest $request, $questionId)
     {
         $question = QuizQuestion::findOrFail($questionId);
+        $this->authorize('update', $question);
         $question->update($request->validated());
 
         return $this->successResponse($question, 'Question updated successfully');
@@ -53,7 +58,9 @@ class AdminQuizQuestionController extends Controller
 
     public function destroy($questionId)
     {
-        QuizQuestion::findOrFail($questionId)->delete();
+        $question = QuizQuestion::findOrFail($questionId);
+        $this->authorize('delete', $question);
+        $question->delete();
         return $this->successResponse(null, 'Question deleted successfully');
     }
 }

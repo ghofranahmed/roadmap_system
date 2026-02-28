@@ -13,8 +13,17 @@ class OpenAIProvider implements LLMProviderInterface
 
     public function __construct()
     {
-        $this->apiKey  = config('services.chatbot.openai_key', '');
-        $this->model   = config('services.chatbot.openai_model', 'gpt-3.5-turbo');
+        $this->apiKey = config('services.chatbot.openai_key', '');
+        
+        // STRICT: Throw exception if API key is missing or empty
+        if (empty($this->apiKey)) {
+            throw new \RuntimeException(
+                'OPENAI_API_KEY is not set or is empty. Please set it in your .env file.'
+            );
+        }
+        
+        // Default model: gpt-4o-mini (safer default than gpt-3.5-turbo)
+        $this->model = config('services.chatbot.openai_model', 'gpt-4o-mini');
         $this->timeout = config('services.chatbot.request_timeout', 15);
     }
 

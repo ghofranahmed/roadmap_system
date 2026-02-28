@@ -13,8 +13,16 @@ class GroqProvider implements LLMProviderInterface
 
     public function __construct()
     {
-        $this->apiKey  = config('services.chatbot.groq_key', '');
-        $this->model   = config('services.chatbot.groq_model', 'llama-3.3-70b-versatile');
+        $this->apiKey = config('services.chatbot.groq_key', '');
+        
+        // STRICT: Throw exception if API key is missing or empty
+        if (empty($this->apiKey)) {
+            throw new \RuntimeException(
+                'GROQ_API_KEY is not set or is empty. Please set it in your .env file.'
+            );
+        }
+        
+        $this->model = config('services.chatbot.groq_model', 'llama-3.3-70b-versatile');
         $this->timeout = config('services.chatbot.request_timeout', 15);
     }
 

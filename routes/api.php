@@ -45,13 +45,7 @@ Route::prefix('v1')->group(function () {
 | AUTH Routes (Public)
 |--------------------------------------------------------------------------
 */
-Route::get('/test-connection', function () {
-    return response()->json([
-        'success' => true,
-        'message' => 'الاتصال ناجح والجهاز واصل بالإنترنت!',
-        'data' => null
-    ]);
-});
+
 
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:5,1');
@@ -109,6 +103,7 @@ Route::prefix('roadmaps')->group(function () {
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/roadmaps/{id}/enroll', [EnrollmentController::class, 'enroll']);
     Route::get('/me/enrollments', [EnrollmentController::class, 'myEnrollments']);
+    Route::get('/me/enrolled-roadmaps', [EnrollmentController::class, 'myEnrolledRoadmaps']);
     Route::patch('/me/enrollments/{roadmapId}/status', [EnrollmentController::class, 'updateStatus']);
     Route::delete('/roadmaps/{id}/unenroll', [EnrollmentController::class, 'unenroll']);
 });
@@ -132,6 +127,9 @@ Route::middleware('auth:sanctum')->group(function () {
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth:sanctum', 'enrolled'])->group(function () {
+
+    // Learning Path (new endpoint for mobile app)
+    Route::get('/roadmaps/{roadmapId}/learning-path', [\App\Http\Controllers\LearningPathController::class, 'show']);
 
     // Learning Units
     Route::get('/roadmaps/{roadmapId}/units', [LearningUnitController::class, 'index']);

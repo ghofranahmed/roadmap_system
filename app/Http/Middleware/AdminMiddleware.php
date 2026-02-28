@@ -17,18 +17,27 @@ class AdminMiddleware
 
         // غير مصادق
         if (!$user) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthenticated.',
-            ], 401);
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthenticated.',
+                ], 401);
+            }
+            return redirect()->guest(route('login'));
         }
 
         // ليس مسؤولاً (check role instead of is_admin)
-        if (!in_array($user->role, ['admin', 'tech_admin'])) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized. Admin access required.',
-            ], 403);
+        // Strict: Only admin and tech_admin can access /admin routes
+        if (!in_array($user->role, ['admin', 'tech_admin'], true)) {
+            // For API requests or JSON requests, return JSON
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized. Admin access required.',
+                ], 403);
+            }
+            // For web requests, abort with 403 (will use custom error view)
+            abort(403, 'Unauthorized. Admin access required.');
         }
 
         return $next($request);

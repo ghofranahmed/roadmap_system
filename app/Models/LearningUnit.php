@@ -24,4 +24,20 @@ class LearningUnit extends Model
     public function challenges() { 
       return $this->hasMany(Challenge::class);
        }
+    
+    // One-to-one relations for learning path API
+    public function lesson()
+    {
+        return $this->hasOne(Lesson::class);
+    }
+    
+    public function quiz()
+    {
+        return $this->hasOne(Quiz::class);
+    }
+    
+    public function challenge()
+    {
+        return $this->hasOne(Challenge::class);
+    }
 }

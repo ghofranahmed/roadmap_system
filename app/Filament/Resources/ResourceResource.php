@@ -5,18 +5,16 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\ResourceResource\Pages;
 use App\Models\Resource;
 use Filament\Forms;
-use Filament\Schemas\Schema;
+use Filament\Forms\Form;
 use Filament\Resources\Resource as FilamentResource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use UnitEnum;
-use BackedEnum;
 
 class ResourceResource extends FilamentResource
 {
     protected static ?string $model = Resource::class;
 
-    protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-link';
+    protected static ?string $navigationIcon = 'heroicon-o-link';
 
     protected static ?string $navigationLabel = 'Resources';
 
@@ -24,7 +22,7 @@ class ResourceResource extends FilamentResource
 
     protected static ?string $pluralModelLabel = 'Resources';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Content Management';
+    protected static ?string $navigationGroup = 'Content Management';
 
     protected static ?int $navigationSort = 5;
 
@@ -33,9 +31,9 @@ class ResourceResource extends FilamentResource
         return auth()->user()?->isTechAdmin() ?? false;
     }
 
-    public static function form(Schema $schema): Schema
+    public static function form(Form $form): Form
     {
-        return $schema
+        return $form
             ->schema([
                 Forms\Components\Select::make('sub_lesson_id')
                     ->relationship('subLesson', 'description')

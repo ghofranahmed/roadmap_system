@@ -15,6 +15,7 @@ class StoreQuizRequest extends FormRequest
     {
         return [
             'learning_unit_id' => ['required', 'integer', 'exists:learning_units,id'],
+            'title' => ['nullable', 'string', 'max:255'],
             'is_active' => ['sometimes', 'boolean'],
             'max_xp' => ['required', 'integer', 'min:0'],
             'min_xp' => ['required', 'integer', 'min:0', 'lte:max_xp'],

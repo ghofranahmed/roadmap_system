@@ -9,6 +9,9 @@ use App\Models\RoadmapEnrollment;
 
 class ChallengePolicy
 {
+    /**
+     * Student-facing: can the user view this challenge?
+     */
     public function view(User $user, Challenge $challenge): bool
     {
         $unit = LearningUnit::find($challenge->learning_unit_id);
@@ -30,7 +33,34 @@ class ChallengePolicy
         return $this->view($user, $challenge);
     }
 
+    /**
+     * Admin-facing: can the user manage challenge content in general?
+     */
     public function manage(User $user): bool
+    {
+        return $user->isTechAdmin();
+    }
+
+    /**
+     * Admin-facing: standard CRUD abilities for content management.
+     * Only technical admins can manage challenge content.
+     */
+    public function viewAny(User $user): bool
+    {
+        return $user->isTechAdmin();
+    }
+
+    public function create(User $user): bool
+    {
+        return $user->isTechAdmin();
+    }
+
+    public function update(User $user, Challenge $challenge): bool
+    {
+        return $user->isTechAdmin();
+    }
+
+    public function delete(User $user, Challenge $challenge): bool
     {
         return $user->isTechAdmin();
     }

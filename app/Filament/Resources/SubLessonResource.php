@@ -5,18 +5,16 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\SubLessonResource\Pages;
 use App\Models\SubLesson;
 use Filament\Forms;
-use Filament\Schemas\Schema;
+use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use UnitEnum;
-use BackedEnum;
 
 class SubLessonResource extends Resource
 {
     protected static ?string $model = SubLesson::class;
 
-    protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-document-duplicate';
+    protected static ?string $navigationIcon = 'heroicon-o-document-duplicate';
 
     protected static ?string $navigationLabel = 'Sub-Lessons';
 
@@ -24,7 +22,7 @@ class SubLessonResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Sub-Lessons';
 
-    protected static UnitEnum|string|null $navigationGroup = 'Content Management';
+    protected static ?string $navigationGroup = 'Content Management';
 
     protected static ?int $navigationSort = 4;
 
@@ -33,9 +31,9 @@ class SubLessonResource extends Resource
         return auth()->user()?->isTechAdmin() ?? false;
     }
 
-    public static function form(Schema $schema): Schema
+    public static function form(Form $form): Form
     {
-        return $schema
+        return $form
             ->schema([
                 Forms\Components\Select::make('lesson_id')
                     ->relationship('lesson', 'title')

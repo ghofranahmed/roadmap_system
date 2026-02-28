@@ -53,9 +53,9 @@ return [
     |--------------------------------------------------------------------------
     */
     'chatbot' => [
-        'provider'             => env('CHATBOT_PROVIDER', 'dummy'),
+        'provider'             => env('CHATBOT_PROVIDER'),
         'openai_key'           => env('OPENAI_API_KEY'),
-        'openai_model'         => env('OPENAI_MODEL', 'gpt-3.5-turbo'),
+        'openai_model'         => env('OPENAI_MODEL', 'gpt-4o-mini'),
         'gemini_key'           => env('GEMINI_API_KEY'),
         'gemini_model'         => env('GEMINI_MODEL', 'gemini-2.0-flash'),
         'groq_key'             => env('GROQ_API_KEY'),

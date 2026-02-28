@@ -5,18 +5,16 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\AnnouncementResource\Pages;
 use App\Models\Announcement;
 use Filament\Forms;
-use Filament\Schemas\Schema;
+use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use UnitEnum;
-use BackedEnum;
 
 class AnnouncementResource extends Resource
 {
     protected static ?string $model = Announcement::class;
 
-    protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-megaphone';
+    protected static ?string $navigationIcon = 'heroicon-o-megaphone';
 
     protected static ?string $navigationLabel = 'Announcements';
 
@@ -24,7 +22,7 @@ class AnnouncementResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Announcements';
 
-    protected static UnitEnum|string|null $navigationGroup ='User Management';
+    protected static ?string $navigationGroup = 'User Management';
 
     protected static ?int $navigationSort = 2;
 
@@ -33,9 +31,9 @@ class AnnouncementResource extends Resource
         return auth()->user()?->isNormalAdmin() ?? false;
     }
 
-    public static function form(Schema $schema): Schema
+    public static function form(Form $form): Form
     {
-        return $schema
+        return $form
             ->schema([
                 Forms\Components\TextInput::make('title')
                     ->required()

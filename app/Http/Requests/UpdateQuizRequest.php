@@ -15,6 +15,7 @@ class UpdateQuizRequest extends FormRequest
     {
         return [
             'learning_unit_id' => ['sometimes', 'integer', 'exists:learning_units,id'],
+            'title' => ['sometimes', 'nullable', 'string', 'max:255'],
             'is_active' => ['sometimes', 'boolean'],
             'max_xp' => ['sometimes', 'integer', 'min:0'],
             'min_xp' => ['sometimes', 'integer', 'min:0'],
