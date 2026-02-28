@@ -1,1 +1,4 @@
 *.sqlite*
+/bootstrap/cache/config.php
+/bootstrap/cache/services.php
+/bootstrap/cache/packages.php
