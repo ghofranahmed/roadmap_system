@@ -273,7 +273,15 @@ Route::middleware(['auth:sanctum', 'role:admin'])
         Route::delete('/{id}', [AdminAnnouncementController::class, 'destroy']);
     });
 
-    // ─── C) Chat Moderation (admin only) ────────────────────────
+    // ─── C) Notifications Management (admin only) ─────────────
+    Route::prefix('notifications')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\AdminNotificationApiController::class, 'index']);
+        Route::post('/', [\App\Http\Controllers\Admin\AdminNotificationApiController::class, 'store']);
+        Route::get('/{id}', [\App\Http\Controllers\Admin\AdminNotificationApiController::class, 'show']);
+        Route::delete('/{id}', [\App\Http\Controllers\Admin\AdminNotificationApiController::class, 'destroy']);
+    });
+
+    // ─── D) Chat Moderation (admin only) ────────────────────────
     Route::post('/roadmaps/{roadmapId}/chat/mute', [AdminChatModerationController::class, 'mute']);
     Route::post('/roadmaps/{roadmapId}/chat/unmute', [AdminChatModerationController::class, 'unmute']);
     Route::post('/roadmaps/{roadmapId}/chat/ban', [AdminChatModerationController::class, 'ban']);

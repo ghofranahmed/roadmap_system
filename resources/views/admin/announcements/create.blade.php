@@ -121,10 +121,74 @@
                         </div>
                     </div>
                 </div>
+
+                <hr>
+
+                <h5>Notification Settings</h5>
+                <div class="form-group">
+                    <div class="form-check">
+                        <input class="form-check-input" 
+                               type="checkbox" 
+                               id="send_notification" 
+                               name="send_notification" 
+                               value="1" 
+                               {{ old('send_notification') ? 'checked' : '' }}
+                               onchange="toggleNotificationOptions()">
+                        <label class="form-check-label" for="send_notification">
+                            Send notification when publishing
+                        </label>
+                    </div>
+                    <small class="form-text text-muted">If enabled, notifications will be sent to targeted users when the announcement is published.</small>
+                </div>
+
+                <div id="notification_options" style="display: {{ old('send_notification') ? 'block' : 'none' }};">
+                    <div class="form-group">
+                        <label for="target_type">Target Audience <span class="text-danger">*</span></label>
+                        <select class="form-control @error('target_type') is-invalid @enderror" 
+                                id="target_type" 
+                                name="target_type" 
+                                onchange="toggleTargetRules()">
+                            <option value="all" {{ old('target_type', 'all') == 'all' ? 'selected' : '' }}>All Users</option>
+                            <option value="specific_users" {{ old('target_type') == 'specific_users' ? 'selected' : '' }}>Specific Users</option>
+                            <option value="inactive_users" {{ old('target_type') == 'inactive_users' ? 'selected' : '' }}>Inactive Users (7+ days)</option>
+                            <option value="low_progress" {{ old('target_type') == 'low_progress' ? 'selected' : '' }}>Low Progress Users</option>
+                        </select>
+                        @error('target_type')
+                            <span class="invalid-feedback" role="alert">
+                                <strong>{{ $message }}</strong>
+                            </span>
+                        @enderror
+                    </div>
+
+                    <div id="specific_users_section" style="display: {{ old('target_type') == 'specific_users' ? 'block' : 'none' }};">
+                        <div class="form-group">
+                            <label for="target_rules">Select Users</label>
+                            <select class="form-control select2" 
+                                    id="target_rules" 
+                                    name="target_rules[]" 
+                                    multiple>
+                                @foreach(\App\Models\User::where('role', 'user')->where('is_notifications_enabled', true)->orderBy('username')->get() as $user)
+                                    <option value="{{ $user->id }}" {{ in_array($user->id, old('target_rules', [])) ? 'selected' : '' }}>
+                                        {{ $user->username }} ({{ $user->email }})
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('target_rules')
+                                <span class="invalid-feedback" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
+                            @enderror
+                            <small class="form-text text-muted">Select one or more users to receive this notification.</small>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="card-footer">
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-save"></i> Create Announcement
+                <button type="submit" name="save_draft" value="1" class="btn btn-secondary">
+                    <i class="fas fa-save"></i> Save as Draft
+                </button>
+                <button type="submit" name="publish" value="1" class="btn btn-primary">
+                    <i class="fas fa-paper-plane"></i> Publish Announcement
                 </button>
                 <a href="{{ route('admin.announcements.index') }}" class="btn btn-default">
                     <i class="fas fa-times"></i> Cancel
@@ -139,6 +203,23 @@
 
 @section('js')
     <script>
+        function toggleNotificationOptions() {
+            const checkbox = document.getElementById('send_notification');
+            const options = document.getElementById('notification_options');
+            options.style.display = checkbox.checked ? 'block' : 'none';
+            
+            if (!checkbox.checked) {
+                document.getElementById('target_type').value = 'all';
+                toggleTargetRules();
+            }
+        }
+
+        function toggleTargetRules() {
+            const targetType = document.getElementById('target_type').value;
+            const specificSection = document.getElementById('specific_users_section');
+            specificSection.style.display = targetType === 'specific_users' ? 'block' : 'none';
+        }
+
         // Convert datetime-local format for display
         document.addEventListener('DOMContentLoaded', function() {
             const startsAt = document.getElementById('starts_at');
@@ -152,6 +233,14 @@
             if (endsAt && endsAt.value) {
                 const date = new Date(endsAt.value);
                 endsAt.value = date.toISOString().slice(0, 16);
+            }
+
+            // Initialize Select2 if available
+            if (typeof $ !== 'undefined' && $.fn.select2) {
+                $('#target_rules').select2({
+                    placeholder: 'Select users...',
+                    allowClear: true
+                });
             }
         });
     </script>

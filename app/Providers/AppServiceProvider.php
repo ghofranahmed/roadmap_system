@@ -35,6 +35,8 @@ use App\Policies\LessonPolicy;
 use App\Policies\SubLessonPolicy;
 use App\Policies\ResourcePolicy;
 use App\Policies\QuizQuestionPolicy;
+use App\Models\Notification;
+use App\Policies\NotificationPolicy;
 
 use App\Services\Compiler\CompilerServiceInterface;
 use App\Services\Compiler\JdoodleCompilerService;
@@ -105,6 +107,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(SubLesson::class, SubLessonPolicy::class);
         Gate::policy(Resource::class, ResourcePolicy::class);
         Gate::policy(QuizQuestion::class, QuizQuestionPolicy::class);
+        Gate::policy(Notification::class, NotificationPolicy::class);
 
         // Apply system settings to admin panel config
         try {

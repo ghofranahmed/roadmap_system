@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 
@@ -86,12 +87,20 @@ class UserController extends Controller
             'password' => ['nullable', 'string', 'min:8', 'confirmed'],
         ]);
 
-        // Prevent normal admin from assigning or changing role to tech_admin
-        if (isset($validated['role']) && $validated['role'] === 'tech_admin') {
-            if ($currentAdmin->isNormalAdmin()) {
+        // STRICT RULE: Prevent role escalation via changeRole policy
+        if (isset($validated['role']) && $validated['role'] !== $user->role) {
+            if (!Gate::allows('changeRole', [$user, $validated['role']])) {
                 return redirect()
                     ->back()
-                    ->withErrors(['role' => 'Normal admins cannot assign technical admin role.'])
+                    ->withErrors(['role' => 'You are not authorized to change this role. Role escalation is not allowed.'])
+                    ->withInput();
+            }
+
+            // Additional check: Prevent escalating to tech_admin
+            if ($validated['role'] === 'tech_admin') {
+                return redirect()
+                    ->back()
+                    ->withErrors(['role' => 'You cannot assign Technical Admin role. Role escalation is not allowed.'])
                     ->withInput();
             }
         }

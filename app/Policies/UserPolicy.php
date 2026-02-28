@@ -36,6 +36,7 @@ class UserPolicy
     /**
      * Determine if the user can update the user.
      * Only normal admin can update users.
+     * Role changes are restricted via changeRole() method.
      */
     public function update(User $user, User $model): bool
     {
@@ -43,7 +44,7 @@ class UserPolicy
             return false;
         }
 
-        // Users can update themselves, but role changes are restricted
+        // Users can update themselves, but role changes are restricted via changeRole()
         return true;
     }
 
@@ -64,8 +65,9 @@ class UserPolicy
     /**
      * Determine if the user can assign a specific role.
      * Used by CreateAdminPage for creating admin users.
+     * STRICT RULE: Each admin type can ONLY create their own type.
      * Normal admin can only assign: admin
-     * Technical admin can assign: admin, tech_admin
+     * Technical admin can only assign: tech_admin
      * Note: 'user' role is NOT allowed from CreateAdminPage (this is for creating admins only).
      */
     public function assignRole(User $user, string $role): bool
@@ -75,12 +77,37 @@ class UserPolicy
             return $role === 'admin';
         }
 
-        // Technical admin can assign admin or tech_admin roles
+        // Technical admin can ONLY assign tech_admin role (strict separation)
         if ($user->isTechAdmin()) {
-            return in_array($role, ['admin', 'tech_admin']);
+            return $role === 'tech_admin';
         }
 
         return false;
+    }
+
+    /**
+     * Determine if the user can change a role.
+     * Prevents privilege escalation through role mutation.
+     */
+    public function changeRole(User $user, User $targetUser, string $newRole): bool
+    {
+        // Prevent self-role change
+        if ($user->id === $targetUser->id) {
+            return false;
+        }
+
+        // Only normal admins can update users (but not change roles to higher privileges)
+        if (!$user->isNormalAdmin()) {
+            return false;
+        }
+
+        // Prevent escalating to tech_admin
+        if ($newRole === 'tech_admin') {
+            return false;
+        }
+
+        // Normal admin can change roles within their scope (user <-> admin)
+        return in_array($newRole, ['user', 'admin']);
     }
 }
 

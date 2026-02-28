@@ -44,6 +44,8 @@ class DashboardController extends Controller
                           ->orWhere('ends_at', '>=', now());
                 })->count(),
                 'total_announcements' => \App\Models\Announcement::count(),
+                'total_notifications' => \App\Models\Notification::count(),
+                'unread_notifications' => \App\Models\Notification::whereNull('read_at')->count(),
             ];
         } elseif ($user->isTechAdmin()) {
             // Technical Admin stats

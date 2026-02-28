@@ -15,8 +15,8 @@ return [
     */
 
     'title' => 'Admin Panel',
-    'title_prefix' => '',
-    'title_postfix' => '',
+    'title_prefix' => 'welcome to',
+    'title_postfix' => 'admin panel',
 
     /*
     |--------------------------------------------------------------------------
@@ -136,7 +136,7 @@ return [
     'usermenu_enabled' => true,
     'usermenu_header' => true,
     'usermenu_header_class' => 'bg-primary',
-    'usermenu_image' => false,   // Disabled to avoid issues if profile_picture is null
+    'usermenu_image' => true,   // Disabled to avoid issues if profile_picture is null
     'usermenu_desc' => true, 
     'usermenu_profile_url' => false,  // Disabled as we don't have a profile page
 
@@ -335,6 +335,11 @@ return [
             'text' => 'Announcements',
             'url' => 'admin/announcements',
             'icon' => 'fas fa-bullhorn',
+        ],
+        [
+            'text' => 'Notifications',
+            'url' => 'admin/notifications',
+            'icon' => 'fas fa-bell',
         ],
         ['header' => 'Community'],
         [

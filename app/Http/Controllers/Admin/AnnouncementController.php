@@ -5,11 +5,18 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreAnnouncementRequest;
 use App\Models\Announcement;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
 class AnnouncementController extends Controller
 {
+    protected NotificationService $notificationService;
+
+    public function __construct(NotificationService $notificationService)
+    {
+        $this->notificationService = $notificationService;
+    }
     /**
      * Display a listing of announcements.
      * Only Normal Admin can view announcements.
@@ -25,6 +32,11 @@ class AnnouncementController extends Controller
         // Apply type filter if provided
         if ($request->filled('type')) {
             $query->where('type', $request->type);
+        }
+
+        // Apply status filter if provided
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
         }
 
         // Apply search if provided
@@ -80,12 +92,29 @@ class AnnouncementController extends Controller
 
         $data = $request->validated();
         $data['created_by'] = $request->user()->id;
+        
+        // Set status based on publish action
+        if ($request->has('publish')) {
+            $data['status'] = 'published';
+        } else {
+            $data['status'] = 'draft';
+        }
 
         $announcement = Announcement::create($data);
 
+        // Create notifications if send_notification is enabled and status is published
+        if ($announcement->send_notification && $announcement->status === 'published') {
+            $count = $this->notificationService->createFromAnnouncement($announcement);
+            $message = $count > 0 
+                ? "Announcement created and {$count} notification(s) sent successfully."
+                : "Announcement created successfully. No notifications sent (no eligible users).";
+        } else {
+            $message = 'Announcement created successfully.';
+        }
+
         return redirect()
             ->route('admin.announcements.index')
-            ->with('success', 'Announcement created successfully.');
+            ->with('success', $message);
     }
 
     /**
@@ -109,11 +138,37 @@ class AnnouncementController extends Controller
         // Check authorization using policy
         $this->authorize('update', $announcement);
 
-        $announcement->update($request->validated());
+        $data = $request->validated();
+        
+        // Handle publish action
+        $wasPublished = $announcement->status === 'published';
+        if ($request->has('publish')) {
+            $data['status'] = 'published';
+        } elseif ($request->has('unpublish')) {
+            $data['status'] = 'draft';
+        }
+
+        $announcement->update($data);
+
+        // Create notifications if:
+        // 1. send_notification is enabled
+        // 2. Status changed to published (was draft before)
+        // 3. No notifications already exist for this announcement
+        if ($announcement->send_notification && 
+            $announcement->status === 'published' && 
+            !$wasPublished &&
+            !$announcement->notifications()->exists()) {
+            $count = $this->notificationService->createFromAnnouncement($announcement);
+            $message = $count > 0 
+                ? "Announcement updated and {$count} notification(s) sent successfully."
+                : "Announcement updated successfully. No notifications sent (no eligible users).";
+        } else {
+            $message = 'Announcement updated successfully.';
+        }
 
         return redirect()
             ->route('admin.announcements.index')
-            ->with('success', 'Announcement updated successfully.');
+            ->with('success', $message);
     }
 
     /**

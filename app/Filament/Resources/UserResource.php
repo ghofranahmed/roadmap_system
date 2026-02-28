@@ -43,19 +43,19 @@ class UserResource extends Resource
         $isTechAdmin = $currentUser?->isTechAdmin() ?? false;
 
         // Determine available role options based on current user
+        // STRICT RULE: Each admin type can only create their own type
         $roleOptions = [];
         if ($isNormalAdmin) {
-            // Normal admin can only assign: user, admin
+            // Normal admin can only assign: user, admin (for creating regular admins)
             $roleOptions = [
                 'user' => 'User',
                 'admin' => 'Normal Admin',
             ];
         } elseif ($isTechAdmin) {
-            // Technical admin can assign: user, admin, tech_admin
+            // Technical admin should use CreateAdminPage for creating tech admins
+            // This resource is mainly for user management
             $roleOptions = [
                 'user' => 'User',
-                'admin' => 'Normal Admin',
-                'tech_admin' => 'Technical Admin',
             ];
         }
 
@@ -86,7 +86,7 @@ class UserResource extends Resource
                     ->helperText(
                         $isNormalAdmin 
                             ? 'You can only create Normal Admin users.' 
-                            : ($isTechAdmin ? 'You can create Normal Admin or Technical Admin users.' : '')
+                            : ($isTechAdmin ? 'Use Create Admin page to create Technical Admins.' : '')
                     )
                     ->visible(fn () => $isNormalAdmin || $isTechAdmin),
 

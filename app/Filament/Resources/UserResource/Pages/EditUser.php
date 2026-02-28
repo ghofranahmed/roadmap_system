@@ -40,35 +40,34 @@ class EditUser extends EditRecord
     {
         $currentUser = auth()->user();
 
-        // If role is being changed, check authorization
+        // If role is being changed, prevent privilege escalation
         if (isset($data['role']) && $data['role'] !== $this->record->role) {
-            // Server-side authorization: Check if user can assign the requested role
-            if (!Gate::allows('assignRole', [User::class, $data['role']])) {
+            // Use the changeRole policy method to prevent escalation
+            if (!Gate::allows('changeRole', [$this->record, $data['role']])) {
                 throw ValidationException::withMessages([
                     'role' => [
                         match ($currentUser?->role) {
-                            'admin' => 'You can only assign User or Normal Admin roles.',
-                            'tech_admin' => 'Invalid role assignment.',
-                            default => 'You are not authorized to assign this role.',
+                            'admin' => 'You can only change roles between User and Normal Admin. You cannot assign Technical Admin role.',
+                            'tech_admin' => 'You cannot change user roles through this interface.',
+                            default => 'You are not authorized to change this role.',
                         }
                     ],
                 ]);
             }
 
-            // Additional validation: Normal admin cannot assign tech_admin role
-            if ($currentUser?->isNormalAdmin() && $data['role'] === 'tech_admin') {
+            // STRICT RULE: Prevent escalating to tech_admin
+            if ($data['role'] === 'tech_admin') {
                 throw ValidationException::withMessages([
-                    'role' => ['Normal admins cannot assign technical admin role.'],
+                    'role' => ['You cannot assign Technical Admin role. Role escalation is not allowed.'],
                 ]);
             }
 
-            // Prevent downgrading tech_admin to lower role (optional business rule)
-            // Uncomment if you want to prevent tech_admin from being downgraded
-            // if ($this->record->role === 'tech_admin' && $data['role'] !== 'tech_admin') {
-            //     throw ValidationException::withMessages([
-            //         'role' => ['Cannot downgrade technical admin role.'],
-            //     ]);
-            // }
+            // Prevent changing your own role
+            if ($this->record->id === $currentUser->id) {
+                throw ValidationException::withMessages([
+                    'role' => ['You cannot change your own role.'],
+                ]);
+            }
         }
 
         // Remove password from data if empty

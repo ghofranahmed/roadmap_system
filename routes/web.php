@@ -27,6 +27,12 @@ Route::middleware(['web', 'auth', 'is_admin'])
         // Note: Protected by AnnouncementPolicy (isNormalAdmin() check in controller)
         Route::resource('announcements', \App\Http\Controllers\Admin\AnnouncementController::class);
         
+        // Notifications Management (Normal Admin only)
+        Route::middleware('role:admin')->group(function () {
+            Route::resource('notifications', \App\Http\Controllers\Admin\NotificationController::class)
+                ->only(['index', 'create', 'store', 'show', 'destroy']);
+        });
+        
         // Chat Moderation (Normal Admin only)
         Route::get('/chat-moderation', [\App\Http\Controllers\Admin\ChatModerationController::class, 'index'])->name('chat-moderation.index');
         Route::get('/chat-moderation/roadmaps/{roadmap}/members', [\App\Http\Controllers\Admin\ChatModerationController::class, 'members'])->name('chat-moderation.members');
@@ -47,9 +53,17 @@ Route::middleware(['web', 'auth', 'is_admin'])
         Route::post('/system-settings/logo', [\App\Http\Controllers\Admin\SystemSettingsController::class, 'uploadLogo'])->name('system-settings.upload-logo');
         Route::post('/system-settings/favicon', [\App\Http\Controllers\Admin\SystemSettingsController::class, 'uploadFavicon'])->name('system-settings.upload-favicon');
         
-        // Create Admin (Technical Admin only)
-        Route::get('/create-admin', [\App\Http\Controllers\Admin\CreateAdminController::class, 'create'])->name('create-admin');
-        Route::post('/create-admin', [\App\Http\Controllers\Admin\CreateAdminController::class, 'store'])->name('create-admin.store');
+        // Create Regular Admin (Regular Admin only)
+        Route::middleware('role:admin')->group(function () {
+            Route::get('/create-regular-admin', [\App\Http\Controllers\Admin\CreateRegularAdminController::class, 'create'])->name('create-regular-admin');
+            Route::post('/create-regular-admin', [\App\Http\Controllers\Admin\CreateRegularAdminController::class, 'store'])->name('create-regular-admin.store');
+        });
+        
+        // Create Tech Admin (Tech Admin only)
+        Route::middleware('role:tech_admin')->group(function () {
+            Route::get('/create-tech-admin', [\App\Http\Controllers\Admin\CreateTechAdminController::class, 'create'])->name('create-tech-admin');
+            Route::post('/create-tech-admin', [\App\Http\Controllers\Admin\CreateTechAdminController::class, 'store'])->name('create-tech-admin.store');
+        });
         
         // Placeholder routes for features under development
         // These show "Coming Soon" pages until full web interfaces are implemented

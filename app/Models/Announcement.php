@@ -15,11 +15,17 @@ class Announcement extends Model
         'starts_at',
         'ends_at',
         'created_by',
+        'send_notification',
+        'target_type',
+        'target_rules',
+        'status',
     ];
 
     protected $casts = [
         'starts_at' => 'datetime',
         'ends_at' => 'datetime',
+        'send_notification' => 'boolean',
+        'target_rules' => 'array',
     ];
 
     // ─── Relationships ───
@@ -27,6 +33,11 @@ class Announcement extends Model
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function notifications()
+    {
+        return $this->hasMany(Notification::class);
     }
 
     // ─── Scopes ───

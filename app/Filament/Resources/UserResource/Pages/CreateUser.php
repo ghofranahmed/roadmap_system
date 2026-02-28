@@ -31,37 +31,39 @@ class CreateUser extends CreateRecord
             $data['role'] = 'admin';
         }
 
-        // Server-side authorization: Check if user can assign the requested role
-        if (!Gate::allows('assignRole', [User::class, $data['role']])) {
-            throw ValidationException::withMessages([
-                'role' => [
-                    match ($currentUser?->role) {
-                        'admin' => 'You can only create Normal Admin users.',
-                        'tech_admin' => 'Invalid role assignment.',
-                        default => 'You are not authorized to assign this role.',
-                    }
-                ],
-            ]);
-        }
-
-        // Additional validation: Normal admin can only create normal admins
+        // STRICT RULE: Each admin type can ONLY create their own type
+        // Normal admin can only create admin
         if ($currentUser?->isNormalAdmin()) {
+            // Force admin role - Regular Admin can ONLY create Regular Admin
             if ($data['role'] === 'tech_admin') {
                 throw ValidationException::withMessages([
-                    'role' => ['Normal admins cannot create technical admins.'],
+                    'role' => ['Normal admins cannot create technical admins. You can only create Normal Admin users.'],
                 ]);
             }
-            // Force admin role for normal admin
-            $data['role'] = 'admin';
+            // If role is not set or is user, allow it (for user creation)
+            // But if trying to create admin, ensure it's admin
+            if ($data['role'] === 'admin') {
+                // This is allowed - Regular Admin creating Regular Admin
+            }
         }
 
-        // Technical admin validation: Can create both admin and tech_admin
+        // Technical admin should use CreateAdminPage for creating tech admins
+        // This resource is for user management only
         if ($currentUser?->isTechAdmin()) {
-            if (!in_array($data['role'], ['admin', 'tech_admin'])) {
-                // For "Add Admin" feature, we focus on admin roles
-                // But tech_admin can also create regular users if needed
-                // This validation ensures they can create admin roles
+            // Tech Admin should not create admins via UserResource
+            // They should use CreateAdminPage
+            if ($data['role'] === 'admin' || $data['role'] === 'tech_admin') {
+                throw ValidationException::withMessages([
+                    'role' => ['Technical admins should use the Create Admin page to create admin accounts.'],
+                ]);
             }
+        }
+
+        // Server-side authorization: Check if user can assign the requested role
+        if ($data['role'] === 'admin' && !Gate::allows('assignRole', [User::class, $data['role']])) {
+            throw ValidationException::withMessages([
+                'role' => ['You are not authorized to assign this role.'],
+            ]);
         }
 
         return $data;

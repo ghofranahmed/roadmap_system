@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Models\User;
+use App\Services\AdminCreationRateLimitService;
 use Filament\Forms;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -56,10 +57,9 @@ class CreateAdminPage extends Page implements HasForms
         $currentUser = auth()->user();
         $isTechAdmin = $currentUser?->isTechAdmin() ?? false;
 
-        // This page is only accessible to tech_admin, so show both options
-        // Normal admin should use UserResource instead
+        // STRICT RULE: Tech Admin can ONLY create Tech Admin
+        // This page is only accessible to tech_admin
         $roleOptions = [
-            'admin' => 'Normal Admin',
             'tech_admin' => 'Technical Admin',
         ];
 
@@ -94,8 +94,9 @@ class CreateAdminPage extends Page implements HasForms
                             ->label('Admin Role')
                             ->options($roleOptions)
                             ->required()
-                            ->default('admin')
-                            ->helperText('Select the role for the new admin user.')
+                            ->default('tech_admin')
+                            ->disabled() // Force tech_admin only
+                            ->helperText('You can only create Technical Admin accounts.')
                             ->columnSpanFull(),
 
                         Forms\Components\TextInput::make('password')
@@ -131,7 +132,7 @@ class CreateAdminPage extends Page implements HasForms
             ->statePath('data');
     }
 
-    public function create(): void
+    public function create(AdminCreationRateLimitService $rateLimitService): void
     {
         $currentUser = auth()->user();
 
@@ -142,31 +143,40 @@ class CreateAdminPage extends Page implements HasForms
             ]);
         }
 
+        // Check rate limit
+        $rateLimitCheck = $rateLimitService->checkRateLimit($currentUser, 'tech_admin');
+        if (!$rateLimitCheck['allowed']) {
+            $remainingTime = $rateLimitCheck['remaining_time'];
+            $remainingMinutes = $rateLimitCheck['remaining_minutes'];
+            $hours = floor($remainingMinutes / 60);
+            $minutes = $remainingMinutes % 60;
+            
+            throw ValidationException::withMessages([
+                'form' => [
+                    $rateLimitCheck['message'] . 
+                    ($remainingTime ? " You can create another admin in " . 
+                        ($hours > 0 ? "{$hours} hour(s) and " : "") . 
+                        "{$minutes} minute(s)." : "")
+                ],
+            ]);
+        }
+
         $data = $this->form->getState();
 
-        // Ensure role is set (default to admin)
-        if (!isset($data['role'])) {
-            $data['role'] = 'admin';
-        }
+        // STRICT RULE: Force tech_admin role - Tech Admin can ONLY create Tech Admin
+        $data['role'] = 'tech_admin';
 
         // Server-side authorization: Check if user can assign the requested role
         if (!Gate::allows('assignRole', [User::class, $data['role']])) {
             throw ValidationException::withMessages([
-                'data.role' => ['You are not authorized to assign this role.'],
+                'data.role' => ['You are not authorized to assign this role. You can only create Technical Admin accounts.'],
             ]);
         }
 
-        // Prevent creating 'user' role from this page (this is for admins only)
-        if ($data['role'] === 'user') {
+        // Validate that role is tech_admin (strict enforcement)
+        if ($data['role'] !== 'tech_admin') {
             throw ValidationException::withMessages([
-                'data.role' => ['Regular users cannot be created from this page. Only admin roles are allowed.'],
-            ]);
-        }
-
-        // Validate that role is either admin or tech_admin
-        if (!in_array($data['role'], ['admin', 'tech_admin'])) {
-            throw ValidationException::withMessages([
-                'data.role' => ['Invalid role. Only admin or tech_admin roles are allowed.'],
+                'data.role' => ['Invalid role. You can only create Technical Admin accounts.'],
             ]);
         }
 
@@ -178,6 +188,9 @@ class CreateAdminPage extends Page implements HasForms
             'role' => $data['role'],
             'is_notifications_enabled' => $data['is_notifications_enabled'] ?? true,
         ]);
+
+        // Log the creation for rate limiting
+        $rateLimitService->logCreation($currentUser, $user, 'tech_admin');
 
         // Show success notification
         Notification::make()

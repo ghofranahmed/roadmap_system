@@ -42,6 +42,11 @@
                         <option value="technical" {{ request('type') == 'technical' ? 'selected' : '' }}>Technical</option>
                         <option value="opportunity" {{ request('type') == 'opportunity' ? 'selected' : '' }}>Opportunity</option>
                     </select>
+                    <select name="status" class="form-control form-control-sm ml-2" onchange="this.form.submit()">
+                        <option value="">All Status</option>
+                        <option value="draft" {{ request('status') == 'draft' ? 'selected' : '' }}>Draft</option>
+                        <option value="published" {{ request('status') == 'published' ? 'selected' : '' }}>Published</option>
+                    </select>
                 </form>
             </div>
         </div>
@@ -52,6 +57,8 @@
                         <th>ID</th>
                         <th>Title</th>
                         <th>Type</th>
+                        <th>Status</th>
+                        <th>Notifications</th>
                         <th>Created By</th>
                         <th>Starts At</th>
                         <th>Ends At</th>
@@ -63,7 +70,11 @@
                     @forelse($announcements as $announcement)
                         <tr>
                             <td>{{ $announcement->id }}</td>
-                            <td>{{ Str::limit($announcement->title, 50) }}</td>
+                            <td>
+                                <a href="{{ route('admin.announcements.show', $announcement) }}">
+                                    {{ Str::limit($announcement->title, 50) }}
+                                </a>
+                            </td>
                             <td>
                                 @php
                                     $badgeColor = match($announcement->type) {
@@ -77,23 +88,43 @@
                                     {{ ucfirst($announcement->type) }}
                                 </span>
                             </td>
+                            <td>
+                                @if($announcement->status === 'published')
+                                    <span class="badge badge-success">Published</span>
+                                @else
+                                    <span class="badge badge-secondary">Draft</span>
+                                @endif
+                            </td>
+                            <td>
+                                @if($announcement->send_notification)
+                                    <span class="badge badge-info" title="Notifications enabled">
+                                        <i class="fas fa-bell"></i>
+                                        {{ $announcement->notifications_count ?? $announcement->notifications()->count() }}
+                                    </span>
+                                @else
+                                    <span class="text-muted">—</span>
+                                @endif
+                            </td>
                             <td>{{ $announcement->creator->username ?? 'N/A' }}</td>
                             <td>{{ $announcement->starts_at ? $announcement->starts_at->format('Y-m-d H:i') : 'N/A' }}</td>
                             <td>{{ $announcement->ends_at ? $announcement->ends_at->format('Y-m-d H:i') : 'N/A' }}</td>
                             <td>{{ $announcement->created_at->format('Y-m-d H:i') }}</td>
                             <td>
                                 <div class="btn-group">
+                                    <a href="{{ route('admin.announcements.show', $announcement) }}" class="btn btn-sm btn-default" title="View">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
                                     @can('update', $announcement)
-                                        <a href="{{ route('admin.announcements.edit', $announcement) }}" class="btn btn-sm btn-info">
-                                            <i class="fas fa-edit"></i> Edit
+                                        <a href="{{ route('admin.announcements.edit', $announcement) }}" class="btn btn-sm btn-info" title="Edit">
+                                            <i class="fas fa-edit"></i>
                                         </a>
                                     @endcan
                                     @can('delete', $announcement)
                                         <form action="{{ route('admin.announcements.destroy', $announcement) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this announcement?');">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-danger">
-                                                <i class="fas fa-trash"></i> Delete
+                                            <button type="submit" class="btn btn-sm btn-danger" title="Delete">
+                                                <i class="fas fa-trash"></i>
                                             </button>
                                         </form>
                                     @endcan
@@ -102,7 +133,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="text-center">No announcements found.</td>
+                            <td colspan="10" class="text-center">No announcements found.</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -119,4 +150,3 @@
 
 @section('js')
 @stop
-

@@ -88,6 +88,38 @@
             </div>
         </div>
 
+        {{-- Notification Stats Row --}}
+        <div class="row">
+            <div class="col-lg-3 col-6">
+                <div class="small-box bg-primary">
+                    <div class="inner">
+                        <h3>{{ $stats['total_notifications'] ?? 0 }}</h3>
+                        <p>Total Notifications</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-bell"></i>
+                    </div>
+                    <a href="{{ route('admin.notifications.index') }}" class="small-box-footer">
+                        More info <i class="fas fa-arrow-circle-right"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-3 col-6">
+                <div class="small-box bg-secondary">
+                    <div class="inner">
+                        <h3>{{ $stats['unread_notifications'] ?? 0 }}</h3>
+                        <p>Unread Notifications</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                    <a href="{{ route('admin.notifications.index') }}?read_status=unread" class="small-box-footer">
+                        More info <i class="fas fa-arrow-circle-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
         <div class="row">
             <div class="col-12">
                 <div class="card">
@@ -96,18 +128,23 @@
                     </div>
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <a href="{{ route('admin.users.index') }}" class="btn btn-primary btn-block">
                                     <i class="fas fa-users"></i> Manage Users
                                 </a>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <a href="{{ route('admin.announcements.create') }}" class="btn btn-success btn-block">
                                     <i class="fas fa-plus"></i> Create Announcement
                                 </a>
                             </div>
-                            <div class="col-md-4">
-                                <a href="{{ route('admin.announcements.index') }}" class="btn btn-info btn-block">
+                            <div class="col-md-3">
+                                <a href="{{ route('admin.notifications.create') }}" class="btn btn-info btn-block">
+                                    <i class="fas fa-bell"></i> Create Notification
+                                </a>
+                            </div>
+                            <div class="col-md-3">
+                                <a href="{{ route('admin.announcements.index') }}" class="btn btn-default btn-block">
                                     <i class="fas fa-bullhorn"></i> View Announcements
                                 </a>
                             </div>
