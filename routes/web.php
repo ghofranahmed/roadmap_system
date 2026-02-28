@@ -63,6 +63,10 @@ Route::middleware(['web', 'auth', 'is_admin'])
         Route::middleware('role:tech_admin')->group(function () {
             Route::get('/create-tech-admin', [\App\Http\Controllers\Admin\CreateTechAdminController::class, 'create'])->name('create-tech-admin');
             Route::post('/create-tech-admin', [\App\Http\Controllers\Admin\CreateTechAdminController::class, 'store'])->name('create-tech-admin.store');
+            
+            // Generic Create Admin route (Tech Admin can create any admin type)
+            Route::get('/create-admin', [\App\Http\Controllers\Admin\CreateAdminController::class, 'create'])->name('create-admin');
+            Route::post('/create-admin', [\App\Http\Controllers\Admin\CreateAdminController::class, 'store'])->name('create-admin.store');
         });
         
         // Placeholder routes for features under development
