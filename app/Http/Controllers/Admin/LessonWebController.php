@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreLessonRequest;
+use App\Http\Requests\Admin\UpdateLessonRequest;
 use App\Models\Lesson;
 use App\Models\LearningUnit;
 use Illuminate\Http\Request;
@@ -52,17 +54,10 @@ class LessonWebController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(StoreLessonRequest $request)
     {
-        $validated = $request->validate([
-            'learning_unit_id' => 'required|exists:learning_units,id',
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'position' => 'nullable|integer|min:1',
-            'is_active' => 'boolean',
-        ]);
-
         try {
+            $validated = $request->validated();
             $learningUnit = LearningUnit::findOrFail($validated['learning_unit_id']);
             $maxPosition = (int) $learningUnit->lessons()->max('position');
             $position = $validated['position'] ?? ($maxPosition + 1);
@@ -103,16 +98,10 @@ class LessonWebController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Lesson $lesson)
+    public function update(UpdateLessonRequest $request, Lesson $lesson)
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'is_active' => 'boolean',
-        ]);
-
         try {
-            $lesson->update($validated);
+            $lesson->update($request->validated());
             
             return redirect()->route('admin.lessons.index')
                 ->with('success', 'Lesson updated successfully.');

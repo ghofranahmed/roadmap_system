@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreRoadmapRequest;
+use App\Http\Requests\Admin\UpdateRoadmapRequest;
 use App\Models\Roadmap;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -51,17 +53,10 @@ class RoadmapWebController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(StoreRoadmapRequest $request)
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'level' => 'required|in:beginner,intermediate,advanced',
-            'is_active' => 'boolean',
-        ]);
-
         try {
-            $roadmap = Roadmap::create($validated);
+            $roadmap = Roadmap::create($request->validated());
             
             // Create chat room automatically (matching API behavior)
             if ($roadmap) {
@@ -102,17 +97,10 @@ class RoadmapWebController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Roadmap $roadmap)
+    public function update(UpdateRoadmapRequest $request, Roadmap $roadmap)
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'level' => 'required|in:beginner,intermediate,advanced',
-            'is_active' => 'boolean',
-        ]);
-
         try {
-            $roadmap->update($validated);
+            $roadmap->update($request->validated());
             Cache::flush();
             
             return redirect()->route('admin.roadmaps.index')

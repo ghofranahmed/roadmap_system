@@ -25,14 +25,12 @@
         @each('adminlte::partials.navbar.menu-item', $adminlte->menu('navbar-right'), 'item')
 
         {{-- Notifications Bell --}}
-        @if(Auth::user() && Auth::user()->isAnyAdmin())
-            @include('admin.partials.navbar-notifications')
-        @endif
+        @include('admin.partials.navbar-notifications')
 
         {{-- User menu link --}}
         @if(Auth::user())
             @if(config('adminlte.usermenu_enabled'))
-                @include('adminlte::partials.navbar.menu-item-dropdown-user-menu')
+                @include('admin.partials.user-menu')
             @else
                 @include('adminlte::partials.navbar.menu-item-logout-link')
             @endif
@@ -45,3 +43,4 @@
     </ul>
 
 </nav>
+

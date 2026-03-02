@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreSubLessonRequest;
+use App\Http\Requests\Admin\UpdateSubLessonRequest;
 use App\Models\SubLesson;
 use App\Models\Lesson;
 use Illuminate\Http\Request;
@@ -48,15 +50,10 @@ class SubLessonWebController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(StoreSubLessonRequest $request)
     {
-        $validated = $request->validate([
-            'lesson_id' => 'required|exists:lessons,id',
-            'description' => 'required|string',
-            'position' => 'nullable|integer|min:1',
-        ]);
-
         try {
+            $validated = $request->validated();
             $lesson = Lesson::findOrFail($validated['lesson_id']);
             $maxPosition = (int) $lesson->subLessons()->max('position');
             $position = $validated['position'] ?? ($maxPosition + 1);
@@ -95,14 +92,10 @@ class SubLessonWebController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, SubLesson $subLesson)
+    public function update(UpdateSubLessonRequest $request, SubLesson $subLesson)
     {
-        $validated = $request->validate([
-            'description' => 'required|string',
-        ]);
-
         try {
-            $subLesson->update($validated);
+            $subLesson->update($request->validated());
             
             return redirect()->route('admin.sub-lessons.index')
                 ->with('success', 'Sub-lesson updated successfully.');

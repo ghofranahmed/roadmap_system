@@ -138,7 +138,7 @@ return [
     'usermenu_header_class' => 'bg-primary',
     'usermenu_image' => true,   // Disabled to avoid issues if profile_picture is null
     'usermenu_desc' => true, 
-    'usermenu_profile_url' => false,  // Disabled as we don't have a profile page
+    'usermenu_profile_url' => true,  // Enabled: links to admin profile page
 
     /*
     |--------------------------------------------------------------------------
@@ -263,7 +263,7 @@ return [
     'register_url' => 'register',
     'password_reset_url' => 'password/reset',
     'password_email_url' => 'password/email',
-    'profile_url' => false,
+    'profile_url' => 'admin.profile.show',
     'disable_darkmode_routes' => false,
 
     /*
@@ -320,6 +320,12 @@ return [
             'url' => 'admin',
             'icon' => 'fas fa-tachometer-alt',
             'active' => ['admin', 'admin/'],
+        ],
+        [
+            'text' => 'My Profile',
+            'url' => 'admin/profile',
+            'icon' => 'fas fa-user-circle',
+            'active' => ['admin/profile*'],
         ],
         
         // Normal Admin Menu (role:admin)

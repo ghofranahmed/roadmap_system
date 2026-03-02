@@ -1,2 +1,9 @@
 *
 !.gitignore
+git rm -r --cached vendor
+git rm -r --cached node_modules
+/bootstrap/cache/config.php
+/bootstrap/cache/*.php
+/bootstrap/cache/*.json
+git rm --cached bootstrap/cache/config.php
+git rm -r --cached storage/logs

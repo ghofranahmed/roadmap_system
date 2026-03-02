@@ -62,31 +62,21 @@
 
         {{-- User menu footer --}}
         <li class="user-footer">
-            <div class="row">
-                <div class="col-6">
-                    @if($profile_url)
-                        <a href="{{ $profile_url }}" class="btn btn-default btn-flat btn-block btn-sm">
-                            <i class="fa fa-fw fa-user text-lightblue"></i>
-                            Profile
-                        </a>
-                    @endif
-                </div>
-                <div class="col-6">
-                    <a href="{{ route('admin.profile.password') }}" class="btn btn-default btn-flat btn-block btn-sm">
-                        <i class="fa fa-fw fa-key text-warning"></i>
-                        Password
-                    </a>
-                </div>
-            </div>
-            <div class="row mt-2">
-                <div class="col-12">
-                    <a class="btn btn-default btn-flat btn-block btn-sm"
-                       href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-                        <i class="fa fa-fw fa-power-off text-red"></i>
-                        Logout
-                    </a>
-                </div>
-            </div>
+            @if($profile_url)
+                <a href="{{ $profile_url }}" class="btn btn-default btn-flat">
+                    <i class="fa fa-fw fa-user text-lightblue"></i>
+                    My Profile
+                </a>
+            @endif
+            <a href="{{ route('admin.profile.password') }}" class="btn btn-default btn-flat">
+                <i class="fa fa-fw fa-key text-warning"></i>
+                Change Password
+            </a>
+            <a class="btn btn-default btn-flat float-right"
+               href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                <i class="fa fa-fw fa-power-off text-red"></i>
+                Logout
+            </a>
             <form id="logout-form" action="{{ $logout_url }}" method="POST" style="display: none;">
                 @if(config('adminlte.logout_method'))
                     {{ method_field(config('adminlte.logout_method')) }}
@@ -98,3 +88,4 @@
     </ul>
 
 </li>
+

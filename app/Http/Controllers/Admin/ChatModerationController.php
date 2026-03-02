@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\ChatModerationRequest;
 use App\Models\ChatModeration;
 use App\Models\Roadmap;
 use App\Models\RoadmapEnrollment;
@@ -103,13 +104,9 @@ class ChatModerationController extends Controller
      * Mute a user in a chat room.
      * POST /admin/chat-moderation/roadmaps/{roadmap}/mute
      */
-    public function mute(Request $request, Roadmap $roadmap)
+    public function mute(ChatModerationRequest $request, Roadmap $roadmap)
     {
-        $validated = $request->validate([
-            'user_id' => 'required|integer|exists:users,id',
-            'reason' => 'nullable|string|max:500',
-            'muted_until' => 'nullable|date|after:now',
-        ]);
+        $validated = $request->validated();
 
         $chatRoom = $roadmap->chatRoom;
 
@@ -150,11 +147,9 @@ class ChatModerationController extends Controller
      * Unmute a user in a chat room.
      * POST /admin/chat-moderation/roadmaps/{roadmap}/unmute
      */
-    public function unmute(Request $request, Roadmap $roadmap)
+    public function unmute(ChatModerationRequest $request, Roadmap $roadmap)
     {
-        $validated = $request->validate([
-            'user_id' => 'required|integer|exists:users,id',
-        ]);
+        $validated = $request->validated();
 
         $chatRoom = $roadmap->chatRoom;
 
@@ -184,12 +179,9 @@ class ChatModerationController extends Controller
      * Ban a user from a chat room.
      * POST /admin/chat-moderation/roadmaps/{roadmap}/ban
      */
-    public function ban(Request $request, Roadmap $roadmap)
+    public function ban(ChatModerationRequest $request, Roadmap $roadmap)
     {
-        $validated = $request->validate([
-            'user_id' => 'required|integer|exists:users,id',
-            'reason' => 'nullable|string|max:500',
-        ]);
+        $validated = $request->validated();
 
         $chatRoom = $roadmap->chatRoom;
 
@@ -229,11 +221,9 @@ class ChatModerationController extends Controller
      * Unban a user from a chat room.
      * POST /admin/chat-moderation/roadmaps/{roadmap}/unban
      */
-    public function unban(Request $request, Roadmap $roadmap)
+    public function unban(ChatModerationRequest $request, Roadmap $roadmap)
     {
-        $validated = $request->validate([
-            'user_id' => 'required|integer|exists:users,id',
-        ]);
+        $validated = $request->validated();
 
         $chatRoom = $roadmap->chatRoom;
 

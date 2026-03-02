@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreAnnouncementRequest;
+use App\Http\Requests\Admin\UpdateAnnouncementRequest;
 use App\Models\Announcement;
 use App\Services\NotificationService;
 use Illuminate\Http\Request;
@@ -133,7 +134,7 @@ class AnnouncementController extends Controller
      * Update the specified announcement.
      * Only Normal Admin can update announcements.
      */
-    public function update(StoreAnnouncementRequest $request, Announcement $announcement)
+    public function update(UpdateAnnouncementRequest $request, Announcement $announcement)
     {
         // Check authorization using policy
         $this->authorize('update', $announcement);

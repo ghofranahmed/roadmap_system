@@ -22,6 +22,13 @@ Route::middleware(['web', 'auth', 'is_admin'])
     ->group(function () {
         // Dashboard
         Route::get('/', [\App\Http\Controllers\Admin\DashboardController::class, 'index'])->name('dashboard');
+
+        // Admin Profile (any admin can manage their own profile)
+        Route::get('/profile', [\App\Http\Controllers\Admin\AdminProfileController::class, 'show'])->name('profile.show');
+        Route::get('/profile/edit', [\App\Http\Controllers\Admin\AdminProfileController::class, 'edit'])->name('profile.edit');
+        Route::put('/profile', [\App\Http\Controllers\Admin\AdminProfileController::class, 'update'])->name('profile.update');
+        Route::get('/profile/password', [\App\Http\Controllers\Admin\AdminProfileController::class, 'editPassword'])->name('profile.password');
+        Route::put('/profile/password', [\App\Http\Controllers\Admin\AdminProfileController::class, 'updatePassword'])->name('profile.password.update');
         
         // Announcements CRUD (Normal Admin only)
         // Note: Protected by AnnouncementPolicy (isNormalAdmin() check in controller)

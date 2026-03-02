@@ -179,12 +179,15 @@ public function hasEnrolled($roadmapId)
 
     /**
      * Get the user's profile URL for AdminLTE.
-     * Returns null as we don't have a profile page yet.
+     * Returns the admin profile route name for admins.
      * 
      * @return string|null
      */
     public function adminlte_profile_url(): ?string
     {
+        if ($this->isAnyAdmin()) {
+            return 'admin.profile.show';
+        }
         return null;
     }
     

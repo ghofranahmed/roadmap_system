@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreQuizRequest;
+use App\Http\Requests\Admin\UpdateQuizRequest;
 use App\Models\Quiz;
 use App\Models\LearningUnit;
 use Illuminate\Http\Request;
@@ -53,24 +55,10 @@ class QuizWebController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(StoreQuizRequest $request)
     {
-        $validated = $request->validate([
-            'learning_unit_id' => 'required|exists:learning_units,id',
-            'title' => 'nullable|string|max:255',
-            'min_xp' => 'required|integer|min:0',
-            'max_xp' => 'required|integer|min:0',
-            'is_active' => 'boolean',
-        ]);
-
-        // Additional validation: min_xp must be <= max_xp
-        if ($validated['min_xp'] > $validated['max_xp']) {
-            return back()->withInput()
-                ->withErrors(['min_xp' => 'Minimum XP must be less than or equal to Maximum XP.']);
-        }
-
         try {
-            $quiz = Quiz::create($validated);
+            $quiz = Quiz::create($request->validated());
 
             return redirect()->route('admin.quizzes.index')
                 ->with('success', 'Quiz created successfully.');
@@ -102,24 +90,10 @@ class QuizWebController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Quiz $quiz)
+    public function update(UpdateQuizRequest $request, Quiz $quiz)
     {
-        $validated = $request->validate([
-            'learning_unit_id' => 'required|exists:learning_units,id',
-            'title' => 'nullable|string|max:255',
-            'min_xp' => 'required|integer|min:0',
-            'max_xp' => 'required|integer|min:0',
-            'is_active' => 'boolean',
-        ]);
-
-        // Additional validation: min_xp must be <= max_xp
-        if ($validated['min_xp'] > $validated['max_xp']) {
-            return back()->withInput()
-                ->withErrors(['min_xp' => 'Minimum XP must be less than or equal to Maximum XP.']);
-        }
-
         try {
-            $quiz->update($validated);
+            $quiz->update($request->validated());
             
             return redirect()->route('admin.quizzes.index')
                 ->with('success', 'Quiz updated successfully.');

@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreLearningUnitRequest;
+use App\Http\Requests\Admin\UpdateLearningUnitRequest;
 use App\Models\LearningUnit;
 use App\Models\Roadmap;
 use Illuminate\Http\Request;
@@ -74,17 +76,10 @@ class LearningUnitWebController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(StoreLearningUnitRequest $request)
     {
-        $validated = $request->validate([
-            'roadmap_id' => 'required|exists:roadmaps,id',
-            'title' => 'required|string|max:255',
-            'position' => 'nullable|integer|min:1',
-            'unit_type' => 'nullable|string|max:255',
-            'is_active' => 'boolean',
-        ]);
-
         try {
+            $validated = $request->validated();
             $roadmap = Roadmap::findOrFail($validated['roadmap_id']);
             $maxPosition = (int) $roadmap->learningUnits()->max('position');
             $position = $validated['position'] ?? ($maxPosition + 1);
@@ -126,17 +121,10 @@ class LearningUnitWebController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, LearningUnit $learningUnit)
+    public function update(UpdateLearningUnitRequest $request, LearningUnit $learningUnit)
     {
-        $validated = $request->validate([
-            'roadmap_id' => 'required|exists:roadmaps,id',
-            'title' => 'required|string|max:255',
-            'unit_type' => 'nullable|string|max:255',
-            'is_active' => 'boolean',
-        ]);
-
         try {
-            $learningUnit->update($validated);
+            $learningUnit->update($request->validated());
             
             return redirect()->route('admin.learning-units.index')
                 ->with('success', 'Learning unit updated successfully.');

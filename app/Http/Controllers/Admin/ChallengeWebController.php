@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreChallengeRequest;
+use App\Http\Requests\Admin\UpdateChallengeRequest;
 use App\Models\Challenge;
 use App\Models\LearningUnit;
 use Illuminate\Http\Request;
@@ -58,23 +60,10 @@ class ChallengeWebController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(StoreChallengeRequest $request)
     {
-        $validated = $request->validate([
-            'learning_unit_id' => 'required|exists:learning_units,id',
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'min_xp' => 'required|integer|min:0',
-            'language' => 'required|in:javascript,python,java,c,cpp',
-            'starter_code' => 'nullable|string',
-            'test_cases' => 'required|array|min:1',
-            'test_cases.*.stdin' => 'nullable|string',
-            'test_cases.*.expected_output' => 'required|string',
-            'is_active' => 'boolean',
-        ]);
-
         try {
-            $challenge = Challenge::create($validated);
+            $challenge = Challenge::create($request->validated());
 
             return redirect()->route('admin.challenges.index')
                 ->with('success', 'Challenge created successfully.');
@@ -106,23 +95,10 @@ class ChallengeWebController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Challenge $challenge)
+    public function update(UpdateChallengeRequest $request, Challenge $challenge)
     {
-        $validated = $request->validate([
-            'learning_unit_id' => 'required|exists:learning_units,id',
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'min_xp' => 'required|integer|min:0',
-            'language' => 'required|in:javascript,python,java,c,cpp',
-            'starter_code' => 'nullable|string',
-            'test_cases' => 'required|array|min:1',
-            'test_cases.*.stdin' => 'nullable|string',
-            'test_cases.*.expected_output' => 'required|string',
-            'is_active' => 'boolean',
-        ]);
-
         try {
-            $challenge->update($validated);
+            $challenge->update($request->validated());
             
             return redirect()->route('admin.challenges.index')
                 ->with('success', 'Challenge updated successfully.');

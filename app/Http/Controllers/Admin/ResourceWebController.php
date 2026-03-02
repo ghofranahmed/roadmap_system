@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreResourceRequest;
+use App\Http\Requests\Admin\UpdateResourceRequest;
 use App\Models\Resource;
 use App\Models\SubLesson;
 use Illuminate\Http\Request;
@@ -57,17 +59,10 @@ class ResourceWebController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(StoreResourceRequest $request)
     {
-        $validated = $request->validate([
-            'sub_lesson_id' => 'required|exists:sub_lessons,id',
-            'title' => 'required|string|max:255',
-            'type' => 'required|in:book,video,article',
-            'language' => 'required|in:ar,en',
-            'link' => 'required|url',
-        ]);
-
         try {
+            $validated = $request->validated();
             $subLesson = SubLesson::findOrFail($validated['sub_lesson_id']);
             
             $resource = $subLesson->resources()->create([
@@ -107,18 +102,10 @@ class ResourceWebController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Resource $resource)
+    public function update(UpdateResourceRequest $request, Resource $resource)
     {
-        $validated = $request->validate([
-            'sub_lesson_id' => 'required|exists:sub_lessons,id',
-            'title' => 'required|string|max:255',
-            'type' => 'required|in:book,video,article',
-            'language' => 'required|in:ar,en',
-            'link' => 'required|url',
-        ]);
-
         try {
-            $resource->update($validated);
+            $resource->update($request->validated());
             
             return redirect()->route('admin.resources.index')
                 ->with('success', 'Resource updated successfully.');
