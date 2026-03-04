@@ -14,38 +14,48 @@ class JdoodleCompilerService implements CompilerServiceInterface
     {
         $this->clientId = config('services.jdoodle.client_id');
         $this->clientSecret = config('services.jdoodle.client_secret');
+
+        // Validate that credentials are set
+        if (empty($this->clientId) || empty($this->clientSecret)) {
+            throw new \RuntimeException(
+                'JDoodle credentials are not configured. Please set JDoodle_CLIENT_ID and JDoodle_CLIENT_SECRET in your .env file.'
+            );
+        }
     }
 
-    public function execute(string $code, string $language, array $testCases = []): array
+    public function execute(string $code, string $language, string $stdin = ''): array
     {
-        // هنا يمكنك تنفيذ كل test case على حدة وجمع النتائج
-        // لكن JDoodle تنفذ قطعة واحدة. سنقوم بتنفيذ الكود مع stdin فارغ أو مع test cases
-        // للتبسيط سنفترض أن الكود يقرأ من stdin حسب test case.
-
-        // إرسال الكود إلى JDoodle
+        // Send code to JDoodle API with the provided stdin
         $response = Http::post($this->apiUrl, [
             'clientId' => $this->clientId,
             'clientSecret' => $this->clientSecret,
             'script' => $code,
             'language' => $this->mapLanguage($language),
             'versionIndex' => $this->getVersionIndex($language),
-            'stdin' => '', // يمكن تمرير test case هنا
+            'stdin' => $stdin, // Pass the actual stdin from test case
         ]);
 
         if ($response->failed()) {
+            $statusCode = $response->status();
+            $errorBody = $response->body();
+            
             return [
                 'output' => '',
                 'success' => false,
-                'error' => 'Compiler API error',
+                'error' => "Compiler API error (HTTP {$statusCode}): " . ($errorBody ?: 'Unknown error'),
             ];
         }
 
         $data = $response->json();
 
+        // JDoodle returns statusCode: 0 for success, non-zero for errors
+        $statusCode = $data['statusCode'] ?? 0;
+        $isSuccess = $statusCode === 0;
+
         return [
             'output' => $data['output'] ?? '',
-            'success' => !($data['statusCode'] ?? 0),
-            'error' => $data['error'] ?? null,
+            'success' => $isSuccess,
+            'error' => $isSuccess ? null : ($data['error'] ?? "Execution failed with status code: {$statusCode}"),
         ];
     }
 

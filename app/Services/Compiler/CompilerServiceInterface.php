@@ -5,11 +5,11 @@ namespace App\Services\Compiler;
 interface CompilerServiceInterface
 {
     /**
-     * تنفيذ الكود وإرجاع النتيجة.
-     * @param string $code
-     * @param string $language
-     * @param array $testCases  // قد تحتاج لاستخدامها لاحقاً
+     * Execute code and return the result.
+     * @param string $code The code to execute
+     * @param string $language The programming language
+     * @param string $stdin Standard input for the program
      * @return array ['output' => string, 'success' => bool, 'error' => string|null]
      */
-    public function execute(string $code, string $language, array $testCases = []): array;
+    public function execute(string $code, string $language, string $stdin = ''): array;
 }

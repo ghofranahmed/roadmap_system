@@ -1,0 +1,655 @@
+{
+	"info": {
+		"_postman_id": "roadmap-system-api-2026",
+		"name": "Roadmap System API - Today's Features",
+		"description": "API collection for roadmap enrollment, learning path, and lesson tracking features implemented today",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "My Account",
+			"item": [
+				{
+					"name": "Get My Account",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has success structure\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success', true);",
+									"    pm.expect(jsonData).to.have.property('message');",
+									"    pm.expect(jsonData).to.have.property('data');",
+									"});",
+									"",
+									"pm.test(\"Data contains user and enrolled_roadmaps\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data).to.have.property('user');",
+									"    pm.expect(jsonData.data).to.have.property('enrolled_roadmaps');",
+									"    pm.expect(jsonData.data.user).to.have.property('id');",
+									"    pm.expect(jsonData.data.user).to.have.property('username');",
+									"    pm.expect(jsonData.data.user).to.have.property('email');",
+									"    pm.expect(jsonData.data.enrolled_roadmaps).to.be.an('array');",
+									"});",
+									"",
+									"pm.test(\"Enrolled roadmap has required fields\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    if (jsonData.data.enrolled_roadmaps.length > 0) {",
+									"        const roadmap = jsonData.data.enrolled_roadmaps[0];",
+									"        pm.expect(roadmap).to.have.property('enrollment_id');",
+									"        pm.expect(roadmap).to.have.property('roadmap_id');",
+									"        pm.expect(roadmap).to.have.property('title');",
+									"        pm.expect(roadmap).to.have.property('status');",
+									"        pm.expect(roadmap).to.have.property('xp_points');",
+									"        pm.expect(roadmap).to.have.property('progress_percent');",
+									"    }",
+									"})"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/me/account",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"me",
+								"account"
+							]
+						},
+						"description": "Get combined user account data with enrolled roadmaps for Flutter \"My Account\" screen"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Roadmaps",
+			"item": [
+				{
+					"name": "Get All Roadmaps (Guest)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has success structure\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success', true);",
+									"    pm.expect(jsonData).to.have.property('data');",
+									"    pm.expect(jsonData.data).to.be.an('array');",
+									"});",
+									"",
+									"pm.test(\"Roadmap has enrollment fields (guest = false/null)\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    if (jsonData.data.length > 0) {",
+									"        const roadmap = jsonData.data[0];",
+									"        pm.expect(roadmap).to.have.property('is_enrolled', false);",
+									"        pm.expect(roadmap).to.have.property('status', null);",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/roadmaps",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"roadmaps"
+							]
+						},
+						"description": "Get all roadmaps as guest (no authentication). Should return is_enrolled=false and status=null for all roadmaps."
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Roadmaps (Authenticated)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has success structure\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success', true);",
+									"    pm.expect(jsonData).to.have.property('data');",
+									"    pm.expect(jsonData.data).to.be.an('array');",
+									"});",
+									"",
+									"pm.test(\"Roadmap has enrollment fields\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    if (jsonData.data.length > 0) {",
+									"        const roadmap = jsonData.data[0];",
+									"        pm.expect(roadmap).to.have.property('is_enrolled');",
+									"        pm.expect(roadmap).to.have.property('status');",
+									"        pm.expect(roadmap.is_enrolled).to.be.a('boolean');",
+									"        if (roadmap.is_enrolled) {",
+									"            pm.expect(['active', 'completed', 'paused']).to.include(roadmap.status);",
+									"        } else {",
+									"            pm.expect(roadmap.status).to.be.null;",
+									"        }",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/roadmaps",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"roadmaps"
+							]
+						},
+						"description": "Get all roadmaps as authenticated user. Should include is_enrolled and status fields based on user's enrollments."
+					},
+					"response": []
+				},
+				{
+					"name": "Enroll in Roadmap",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Response has success structure\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success', true);",
+									"    pm.expect(jsonData).to.have.property('data');",
+									"    pm.expect(jsonData.data).to.have.property('enrollment');",
+									"});",
+									"",
+									"pm.test(\"Enrollment has required fields\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    const enrollment = jsonData.data.enrollment;",
+									"    pm.expect(enrollment).to.have.property('id');",
+									"    pm.expect(enrollment).to.have.property('roadmap_id');",
+									"    pm.expect(enrollment).to.have.property('status', 'active');",
+									"});",
+									"",
+									"pm.test(\"Save roadmapId variable\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    if (jsonData.data.enrollment && jsonData.data.enrollment.roadmap_id) {",
+									"        pm.collectionVariables.set('roadmapId', jsonData.data.enrollment.roadmap_id);",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/roadmaps/{{roadmapId}}/enroll",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"roadmaps",
+								"{{roadmapId}}",
+								"enroll"
+							]
+						},
+						"description": "Enroll authenticated user in a roadmap. Creates new enrollment with status='active'."
+					},
+					"response": []
+				},
+				{
+					"name": "Enroll in Roadmap (Duplicate - Expect 409)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 409 Conflict\", function () {",
+									"    pm.response.to.have.status(409);",
+									"});",
+									"",
+									"pm.test(\"Response has error structure\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success', false);",
+									"    pm.expect(jsonData).to.have.property('message');",
+									"    pm.expect(jsonData).to.have.property('data');",
+									"});",
+									"",
+									"pm.test(\"Error data contains enrollment info\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data).to.have.property('enrollment_id');",
+									"    pm.expect(jsonData.data).to.have.property('roadmap_id');",
+									"    pm.expect(jsonData.data).to.have.property('status');",
+									"});",
+									"",
+									"pm.test(\"Message indicates duplicate enrollment\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.message).to.include('already enrolled');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/roadmaps/{{roadmapId}}/enroll",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"roadmaps",
+								"{{roadmapId}}",
+								"enroll"
+							]
+						},
+						"description": "Attempt to enroll in a roadmap the user is already enrolled in. Should return 409 Conflict with enrollment details."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Learning Path",
+			"item": [
+				{
+					"name": "Get Learning Path",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has success structure\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success', true);",
+									"    pm.expect(jsonData).to.have.property('message');",
+									"    pm.expect(jsonData).to.have.property('data');",
+									"});",
+									"",
+									"pm.test(\"Data contains roadmap and units\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data).to.have.property('roadmap');",
+									"    pm.expect(jsonData.data).to.have.property('units');",
+									"    pm.expect(jsonData.data.units).to.be.an('array');",
+									"});",
+									"",
+									"pm.test(\"Roadmap has required fields\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data.roadmap).to.have.property('id');",
+									"    pm.expect(jsonData.data.roadmap).to.have.property('title');",
+									"    pm.expect(jsonData.data.roadmap).to.have.property('description');",
+									"    pm.expect(jsonData.data.roadmap).to.have.property('level');",
+									"});",
+									"",
+									"pm.test(\"Each unit has required base fields\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    if (jsonData.data.units.length > 0) {",
+									"        const unit = jsonData.data.units[0];",
+									"        pm.expect(unit).to.have.property('id');",
+									"        pm.expect(unit).to.have.property('position');",
+									"        pm.expect(unit).to.have.property('unit_type');",
+									"        pm.expect(unit).to.have.property('entity');",
+									"        pm.expect(unit).to.have.property('is_locked');",
+									"        pm.expect(unit).to.have.property('is_completed');",
+									"        pm.expect(['lesson', 'quiz', 'challenge']).to.include(unit.unit_type);",
+									"    }",
+									"});",
+									"",
+									"pm.test(\"Lesson units have tracking object\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    const lessonUnits = jsonData.data.units.filter(u => u.unit_type === 'lesson');",
+									"    lessonUnits.forEach(unit => {",
+									"        pm.expect(unit).to.have.property('tracking');",
+									"        pm.expect(unit.tracking).to.have.property('exists');",
+									"        pm.expect(unit.tracking).to.have.property('is_complete');",
+									"        pm.expect(unit.tracking).to.have.property('last_updated_at');",
+									"        pm.expect(unit.tracking.exists).to.be.a('boolean');",
+									"        pm.expect(unit.tracking.is_complete).to.be.a('boolean');",
+									"        if (unit.tracking.exists) {",
+									"            pm.expect(unit.tracking.last_updated_at).to.be.a('string');",
+									"        } else {",
+									"            pm.expect(unit.tracking.last_updated_at).to.be.null;",
+									"        }",
+									"    });",
+									"});",
+									"",
+									"pm.test(\"Quiz units have latest_attempt\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    const quizUnits = jsonData.data.units.filter(u => u.unit_type === 'quiz');",
+									"    quizUnits.forEach(unit => {",
+									"        pm.expect(unit).to.have.property('latest_attempt');",
+									"        if (unit.latest_attempt !== null) {",
+									"            pm.expect(unit.latest_attempt).to.have.property('id');",
+									"            pm.expect(unit.latest_attempt).to.have.property('passed');",
+									"            pm.expect(unit.latest_attempt).to.have.property('score');",
+									"            pm.expect(unit.latest_attempt).to.have.property('created_at');",
+									"            pm.expect(unit.latest_attempt).to.have.property('updated_at');",
+									"        }",
+									"    });",
+									"});",
+									"",
+									"pm.test(\"Challenge units have latest_attempt\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    const challengeUnits = jsonData.data.units.filter(u => u.unit_type === 'challenge');",
+									"    challengeUnits.forEach(unit => {",
+									"        pm.expect(unit).to.have.property('latest_attempt');",
+									"        if (unit.latest_attempt !== null) {",
+									"            pm.expect(unit.latest_attempt).to.have.property('id');",
+									"            pm.expect(unit.latest_attempt).to.have.property('passed');",
+									"            pm.expect(unit.latest_attempt).to.have.property('created_at');",
+									"            pm.expect(unit.latest_attempt).to.have.property('updated_at');",
+									"        }",
+									"    });",
+									"});",
+									"",
+									"pm.test(\"Units are ordered by position\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    const positions = jsonData.data.units.map(u => u.position);",
+									"    const sortedPositions = [...positions].sort((a, b) => a - b);",
+									"    pm.expect(positions).to.eql(sortedPositions);",
+									"});",
+									"",
+									"pm.test(\"Save first lessonId if exists\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    const firstLesson = jsonData.data.units.find(u => u.unit_type === 'lesson');",
+									"    if (firstLesson && firstLesson.entity && firstLesson.entity.id) {",
+									"        pm.collectionVariables.set('lessonId', firstLesson.entity.id);",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/roadmaps/{{roadmapId}}/learning-path",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"roadmaps",
+								"{{roadmapId}}",
+								"learning-path"
+							]
+						},
+						"description": "Get learning path for a roadmap. Includes tracking data for lessons and latest attempts for quizzes/challenges. Optimized with batch loading (no N+1 queries)."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Lesson Tracking",
+			"item": [
+				{
+					"name": "Open/Touch Lesson",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has success structure\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success', true);",
+									"    pm.expect(jsonData).to.have.property('message');",
+									"    pm.expect(jsonData).to.have.property('data');",
+									"});",
+									"",
+									"pm.test(\"Data contains tracking info\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data).to.have.property('lesson_id');",
+									"    pm.expect(jsonData.data).to.have.property('is_complete');",
+									"    pm.expect(jsonData.data).to.have.property('last_updated_at');",
+									"    pm.expect(jsonData.data.is_complete).to.be.a('boolean');",
+									"});",
+									"",
+									"pm.test(\"Tracking is created or updated\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data.is_complete).to.be.false;",
+									"    pm.expect(jsonData.data.last_updated_at).to.not.be.null;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/lessons/{{lessonId}}/track/open",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"lessons",
+								"{{lessonId}}",
+								"track",
+								"open"
+							]
+						},
+						"description": "Touch/open a lesson. Creates tracking row if not exists (lazy creation), or updates last_updated_at if exists. Idempotent operation."
+					},
+					"response": []
+				},
+				{
+					"name": "Complete Lesson",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has success structure\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success', true);",
+									"    pm.expect(jsonData).to.have.property('message');",
+									"    pm.expect(jsonData).to.have.property('data');",
+									"});",
+									"",
+									"pm.test(\"Data contains completion info\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data).to.have.property('lesson_id');",
+									"    pm.expect(jsonData.data).to.have.property('is_complete', true);",
+									"    pm.expect(jsonData.data).to.have.property('last_updated_at');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/lessons/{{lessonId}}/track/complete",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"lessons",
+								"{{lessonId}}",
+								"track",
+								"complete"
+							]
+						},
+						"description": "Mark a lesson as complete. Creates tracking row if not exists, or updates existing one to set is_complete=true."
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://roadmap_system.test",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "roadmapId",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "lessonId",
+			"value": "1",
+			"type": "string"
+		}
+	]
+}
+

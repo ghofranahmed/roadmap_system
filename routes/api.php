@@ -104,7 +104,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/roadmaps/{id}/enroll', [EnrollmentController::class, 'enroll']);
     Route::get('/me/enrollments', [EnrollmentController::class, 'myEnrollments']);
     Route::get('/me/enrolled-roadmaps', [EnrollmentController::class, 'myEnrolledRoadmaps']);
+    Route::get('/me/account', [EnrollmentController::class, 'myAccount']);
     Route::patch('/me/enrollments/{roadmapId}/status', [EnrollmentController::class, 'updateStatus']);
+    Route::post('/roadmaps/{roadmapId}/reset-progress', [EnrollmentController::class, 'resetProgress']);
     Route::delete('/roadmaps/{id}/unenroll', [EnrollmentController::class, 'unenroll']);
 });
 
@@ -138,6 +140,7 @@ Route::middleware(['auth:sanctum', 'enrolled'])->group(function () {
     // Lessons
     Route::get('/units/{unitId}/lessons', [LessonController::class, 'index']);
     Route::get('/lessons/{lessonId}', [LessonController::class, 'show']);
+    Route::get('/lessons/{lessonId}/details', [LessonController::class, 'details']);
 
     // SubLessons
     Route::get('/lessons/{lessonId}/sub-lessons', [SubLessonController::class, 'index']);
@@ -168,12 +171,15 @@ Route::middleware(['auth:sanctum', 'enrolled'])->group(function () {
     Route::get('/roadmaps/{roadmapId}/quizzes', [QuizController::class, 'roadmapIndex']);
     Route::get('/units/{unitId}/quizzes', [QuizController::class, 'index']);
     Route::get('/quizzes/{quizId}', [QuizController::class, 'startAttempt'])->middleware('throttle:5,1');
+    Route::get('/quizzes/{quizId}/details', [QuizController::class, 'details']);
+    Route::post('/quizzes/{quizId}/attempts', [QuizController::class, 'createAttempt'])->middleware('throttle:5,1');
     Route::put('/quiz-attempts/{attemptId}/submit', [QuizController::class, 'submitAttempt'])->middleware('throttle:5,1');
     Route::get('/quiz-attempts/{attemptId}', [QuizController::class, 'showAttempt']);
     Route::get('/quizzes/{quizId}/my-attempts', [QuizController::class, 'myAttempts']);
 
     // ===== CHALLENGES =====
     Route::get('/units/{unitId}/challenges', [ChallengeController::class, 'index']);
+    Route::get('/challenges/{challengeId}', [ChallengeController::class, 'show']);
     Route::post('/challenges/{challengeId}/attempts', [ChallengeController::class, 'startAttempt'])
         ->middleware('throttle:5,1');
     Route::put('/challenge-attempts/{challengeAttemptId}/submit', [ChallengeController::class, 'submitAttempt'])

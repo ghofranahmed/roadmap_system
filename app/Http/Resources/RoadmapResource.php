@@ -10,6 +10,11 @@ class RoadmapResource extends JsonResource
       
     public function toArray(Request $request): array
     {
+        // Get enrollment map from request attributes (set by controller)
+        $enrollmentMap = $request->attributes->get('enrollment_map', []);
+        $isEnrolled = isset($enrollmentMap[$this->id]);
+        $enrollmentStatus = $isEnrolled ? $enrollmentMap[$this->id] : null;
+        
         return [
             'id' => $this->id,
             'title' => $this->title,
@@ -17,6 +22,8 @@ class RoadmapResource extends JsonResource
             'level' => $this->level,
             'level_arabic' => $this->getArabicLevel(),
             'is_active' => (bool)$this->is_active,
+            'is_enrolled' => $isEnrolled,
+            'status' => $enrollmentStatus,
             'created_at' => $this->created_at->format('Y-m-d H:i:s'),
             'updated_at' => $this->updated_at->format('Y-m-d H:i:s'),
             

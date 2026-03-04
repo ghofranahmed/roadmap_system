@@ -26,14 +26,39 @@ class RoadmapController extends Controller
         try {
             $validated = $request->validated();
             
-            // استخدام الكاش لتحسين الأداء (30 دقيقة)
-            $cacheKey = 'roadmaps_' . md5(serialize($validated));
+            // Get authenticated user (if any)
+            $user = $request->user();
             
-            $roadmaps = Cache::remember($cacheKey, 1800, function () use ($validated) {
-                return $this->buildRoadmapQuery($validated)->paginate(
+            // Get user's enrollment status if authenticated
+            $enrollmentMap = [];
+            if ($user) {
+                // Single query to get all enrollments for this user
+                $enrollments = RoadmapEnrollment::where('user_id', $user->id)
+                    ->select('roadmap_id', 'status')
+                    ->get();
+                
+                // Create lookup map: roadmap_id => status
+                $enrollmentMap = $enrollments->pluck('status', 'roadmap_id')->toArray();
+            }
+            
+            // Disable cache for authenticated users (since enrollment status is user-specific)
+            // For guests, use cache as before
+            if ($user) {
+                $roadmaps = $this->buildRoadmapQuery($validated)->paginate(
                     $validated['per_page'] ?? 10
                 );
-            });
+            } else {
+                // Use cache for guest users
+                $cacheKey = 'roadmaps_' . md5(serialize($validated));
+                $roadmaps = Cache::remember($cacheKey, 1800, function () use ($validated) {
+                    return $this->buildRoadmapQuery($validated)->paginate(
+                        $validated['per_page'] ?? 10
+                    );
+                });
+            }
+            
+            // Pass enrollment map to resources via request attributes
+            $request->attributes->set('enrollment_map', $enrollmentMap);
             
             return RoadmapResource::collection($roadmaps)
                 ->additional([
@@ -59,6 +84,18 @@ class RoadmapController extends Controller
             $level = $validated['level'] ?? null;
             $limit = $validated['limit'] ?? 10;
 
+            // Get authenticated user (if any)
+            $user = $request->user();
+            
+            // Get user's enrollment status if authenticated
+            $enrollmentMap = [];
+            if ($user) {
+                $enrollments = RoadmapEnrollment::where('user_id', $user->id)
+                    ->select('roadmap_id', 'status')
+                    ->get();
+                $enrollmentMap = $enrollments->pluck('status', 'roadmap_id')->toArray();
+            }
+
             $query = Roadmap::where('is_active', true)
                 ->withCount(['enrollments', 'learningUnits']);
 
@@ -77,6 +114,9 @@ class RoadmapController extends Controller
             $query->orderBy('created_at', 'desc');
 
             $roadmaps = $query->limit($limit)->get();
+
+            // Pass enrollment map to resources
+            $request->attributes->set('enrollment_map', $enrollmentMap);
 
             return $this->successResponse([
                 'roadmaps' => RoadmapResource::collection($roadmaps),

@@ -64,4 +64,16 @@ return [
         'request_timeout'      => 15,
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | JDoodle Online Compiler
+    |--------------------------------------------------------------------------
+    | Used for executing challenge code submissions.
+    | Get credentials from: https://www.jdoodle.com/api-docs
+    */
+    'jdoodle' => [
+        'client_id'     => env('JDoodle_CLIENT_ID'),
+        'client_secret' => env('JDoodle_CLIENT_SECRET'),
+    ],
+
 ];

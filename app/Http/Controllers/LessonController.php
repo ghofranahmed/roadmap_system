@@ -46,6 +46,58 @@ class LessonController extends Controller
         return $this->successResponse($lesson);
     }
 
+    /**
+     * عرض درس معين مع جميع الدروس الفرعية والمصادر في استجابة واحدة
+     * GET /lessons/{lessonId}/details
+     * Returns: lesson object, sub_lessons (ordered by position), and nested resources for each sub-lesson
+     */
+    public function details($lessonId)
+    {
+        $lesson = Lesson::where('id', $lessonId)
+            ->where('is_active', true)
+            ->with(['subLessons' => function ($query) {
+                $query->orderBy('position')
+                    ->with(['resources' => function ($q) {
+                        $q->select('id', 'title', 'type', 'language', 'link', 'sub_lesson_id', 'created_at');
+                    }]);
+            }])
+            ->firstOrFail(['id', 'learning_unit_id', 'title', 'description', 'position', 'is_active', 'created_at']);
+
+        // Build response structure
+        $response = [
+            'lesson' => [
+                'id' => $lesson->id,
+                'learning_unit_id' => $lesson->learning_unit_id,
+                'title' => $lesson->title,
+                'description' => $lesson->description,
+                'position' => $lesson->position,
+                'is_active' => $lesson->is_active,
+                'created_at' => $lesson->created_at?->toISOString(),
+            ],
+            'sub_lessons' => $lesson->subLessons->map(function ($subLesson) {
+                return [
+                    'id' => $subLesson->id,
+                    'lesson_id' => $subLesson->lesson_id,
+                    'position' => $subLesson->position,
+                    'description' => $subLesson->description,
+                    'created_at' => $subLesson->created_at?->toISOString(),
+                    'resources' => $subLesson->resources->map(function ($resource) {
+                        return [
+                            'id' => $resource->id,
+                            'title' => $resource->title,
+                            'type' => $resource->type,
+                            'language' => $resource->language,
+                            'link' => $resource->link,
+                            'created_at' => $resource->created_at?->toISOString(),
+                        ];
+                    })->values()->toArray(), // Ensure it's always an array, not null
+                ];
+            })->values()->toArray(), // Ensure it's always an array, not null
+        ];
+
+        return $this->successResponse($response);
+    }
+
     // ==========================
     // Admin Methods (Full CRUD)
     // ==========================

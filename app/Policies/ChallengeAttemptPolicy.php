@@ -32,16 +32,7 @@ class ChallengeAttemptPolicy
             return false;
         }
 
-        // Prevent multiple active attempts (attempts without execution_output are considered active)
-        $activeAttempt = \App\Models\ChallengeAttempt::where('challenge_id', $challenge->id)
-            ->where('user_id', $user->id)
-            ->whereNull('execution_output')
-            ->exists();
-
-        if ($activeAttempt) {
-            return false;
-        }
-
+        // Allow creating new attempts anytime (controller will handle closing previous active attempts)
         return true;
     }
 
@@ -65,6 +56,26 @@ class ChallengeAttemptPolicy
 
         // Prevent resubmitting after passing
         if ($attempt->passed) return false;
+
+        // Enforce XP unlock requirement (same as create policy)
+        $challenge = $attempt->challenge;
+        if (!$challenge || !$challenge->is_active) {
+            return false;
+        }
+
+        $unit = $challenge->learningUnit;
+        if (!$unit) return false;
+
+        $enrollment = RoadmapEnrollment::where('user_id', $user->id)
+            ->where('roadmap_id', $unit->roadmap_id)
+            ->first();
+
+        if (!$enrollment) return false;
+
+        // Check XP unlock requirement - prevent submission if locked
+        if ((int)$enrollment->xp_points < (int)$challenge->min_xp) {
+            return false;
+        }
 
         return true;
     }

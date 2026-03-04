@@ -4,7 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Carbon;
 
 class LearningPathUnitResource extends JsonResource
 {
@@ -15,12 +15,13 @@ class LearningPathUnitResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $user = $request->user();
         $entity = $this->getEntityData();
-        $locked = $this->isLocked($user);
-        $completed = $this->isCompleted($user);
-        
-        return [
+        $tracking = $this->getLessonTracking($request);
+        $latestAttempt = $this->getLatestAttempt($request);
+        $locked = $this->getUnitLocked($request);
+        $completed = $this->getUnitCompleted($request);
+
+        $response = [
             'id' => $this->id,
             'position' => $this->position,
             'unit_type' => $this->unit_type,
@@ -29,6 +30,16 @@ class LearningPathUnitResource extends JsonResource
             'is_locked' => $locked,
             'is_completed' => $completed,
         ];
+
+        if ($this->unit_type === 'lesson') {
+            $response['tracking'] = $tracking;
+        }
+
+        if (in_array($this->unit_type, ['quiz', 'challenge'], true)) {
+            $response['latest_attempt'] = $latestAttempt;
+        }
+
+        return $response;
     }
     
     /**
@@ -41,6 +52,9 @@ class LearningPathUnitResource extends JsonResource
                 'id' => $this->lesson->id,
                 'type' => 'lesson',
                 'title' => $this->lesson->title,
+                'description' => $this->lesson->description,
+                'position' => $this->lesson->position,
+                'is_active' => (bool) $this->lesson->is_active,
             ];
         }
         
@@ -49,6 +63,9 @@ class LearningPathUnitResource extends JsonResource
                 'id' => $this->quiz->id,
                 'type' => 'quiz',
                 'title' => $this->quiz->title ?? $this->title, // Fallback to unit title if quiz title is null
+                'min_xp' => (int) $this->quiz->min_xp,
+                'max_xp' => (int) $this->quiz->max_xp,
+                'is_active' => (bool) $this->quiz->is_active,
             ];
         }
         
@@ -57,6 +74,9 @@ class LearningPathUnitResource extends JsonResource
                 'id' => $this->challenge->id,
                 'type' => 'challenge',
                 'title' => $this->challenge->title,
+                'description' => $this->challenge->description,
+                'min_xp' => (int) $this->challenge->min_xp,
+                'is_active' => (bool) $this->challenge->is_active,
             ];
         }
         
@@ -71,120 +91,80 @@ class LearningPathUnitResource extends JsonResource
         $entity = $this->getEntityData();
         return $entity['title'] ?? $this->title ?? 'Untitled';
     }
-    
-    /**
-     * Check if unit is locked for user
-     */
-    private function isLocked($user): bool
+
+    private function getLessonTracking(Request $request): array
     {
-        if (!$user) {
-            return true;
+        if ($this->unit_type !== 'lesson' || !$this->lesson) {
+            return [
+                'exists' => false,
+                'is_complete' => false,
+                'last_updated_at' => null,
+            ];
         }
-        
-        // Lessons: locked if previous lesson units are not completed
-        if ($this->unit_type === 'lesson') {
-            $previousLessonUnits = \App\Models\LearningUnit::where('roadmap_id', $this->roadmap_id)
-                ->where('unit_type', 'lesson')
-                ->where('position', '<', $this->position)
-                ->orderBy('position')
-                ->get();
-            
-            foreach ($previousLessonUnits as $prevUnit) {
-                if ($prevUnit->lesson) {
-                    $completed = \App\Models\LessonTracking::where('user_id', $user->id)
-                        ->where('lesson_id', $prevUnit->lesson->id)
-                        ->where('is_complete', true)
-                        ->exists();
-                    
-                    if (!$completed) {
-                        return true;
-                    }
-                }
-            }
-            
-            return false;
-        }
-        
-        // Quiz: locked if previous lesson units are not completed (using QuizPolicy logic)
-        if ($this->unit_type === 'quiz') {
-            $quiz = $this->quiz;
-            if (!$quiz) {
-                return true;
-            }
-            
-            // Use QuizPolicy logic: all previous lesson units must be completed
-            $prevLessonIds = \Illuminate\Support\Facades\DB::table('learning_units as lu')
-                ->join('lessons as l', 'l.learning_unit_id', '=', 'lu.id')
-                ->where('lu.roadmap_id', $this->roadmap_id)
-                ->where('lu.is_active', 1)
-                ->where('lu.unit_type', 'lesson')
-                ->where('lu.position', '<', $this->position)
-                ->pluck('l.id');
-            
-            if ($prevLessonIds->isEmpty()) {
-                return false;
-            }
-            
-            $completedCount = \App\Models\LessonTracking::where('user_id', $user->id)
-                ->whereIn('lesson_id', $prevLessonIds)
-                ->where('is_complete', 1)
-                ->count();
-            
-            return $completedCount !== $prevLessonIds->count();
-        }
-        
-        // Challenge: locked if user doesn't have enough XP (using ChallengePolicy logic)
-        if ($this->unit_type === 'challenge') {
-            $challenge = $this->challenge;
-            if (!$challenge) {
-                return true;
-            }
-            
-            $enrollment = \App\Models\RoadmapEnrollment::where('user_id', $user->id)
-                ->where('roadmap_id', $this->roadmap_id)
-                ->first();
-            
-            if (!$enrollment) {
-                return true;
-            }
-            
-            return (int)$enrollment->xp_points < (int)$challenge->min_xp;
-        }
-        
-        return false;
+
+        $trackingMap = $request->attributes->get('lesson_tracking_by_lesson_id');
+        $tracking = $trackingMap?->get($this->lesson->id);
+        $lastUpdatedAt = $tracking?->last_updated_at
+            ? Carbon::parse($tracking->last_updated_at)->toISOString()
+            : null;
+
+        return [
+            'exists' => (bool) $tracking,
+            'is_complete' => (bool) ($tracking?->is_complete ?? false),
+            'last_updated_at' => $lastUpdatedAt,
+        ];
     }
-    
-    /**
-     * Check if unit is completed for user
-     */
-    private function isCompleted($user): bool
+
+    private function getLatestAttempt(Request $request): ?array
     {
-        if (!$user) {
-            return false;
-        }
-        
-        if ($this->unit_type === 'lesson' && $this->lesson) {
-            return \App\Models\LessonTracking::where('user_id', $user->id)
-                ->where('lesson_id', $this->lesson->id)
-                ->where('is_complete', true)
-                ->exists();
-        }
-        
         if ($this->unit_type === 'quiz' && $this->quiz) {
-            return \App\Models\QuizAttempt::where('user_id', $user->id)
-                ->where('quiz_id', $this->quiz->id)
-                ->where('passed', true)
-                ->exists();
+            $attempt = $request->attributes
+                ->get('latest_quiz_attempt_by_quiz_id')
+                ?->get($this->quiz->id);
+
+            if (!$attempt) {
+                return null;
+            }
+
+            return [
+                'id' => $attempt->id,
+                'passed' => (bool) $attempt->passed,
+                'score' => (int) $attempt->score,
+                'created_at' => $attempt->created_at?->toISOString(),
+                'updated_at' => $attempt->updated_at?->toISOString(),
+            ];
         }
-        
+
         if ($this->unit_type === 'challenge' && $this->challenge) {
-            return \App\Models\ChallengeAttempt::where('user_id', $user->id)
-                ->where('challenge_id', $this->challenge->id)
-                ->where('passed', true)
-                ->exists();
+            $attempt = $request->attributes
+                ->get('latest_challenge_attempt_by_challenge_id')
+                ?->get($this->challenge->id);
+
+            if (!$attempt) {
+                return null;
+            }
+
+            return [
+                'id' => $attempt->id,
+                'passed' => (bool) $attempt->passed,
+                'created_at' => $attempt->created_at?->toISOString(),
+                'updated_at' => $attempt->updated_at?->toISOString(),
+            ];
         }
-        
-        return false;
+
+        return null;
+    }
+
+    private function getUnitLocked(Request $request): bool
+    {
+        $unitLockMap = $request->attributes->get('unit_lock_map', []);
+        return (bool) ($unitLockMap[$this->id] ?? true);
+    }
+
+    private function getUnitCompleted(Request $request): bool
+    {
+        $unitCompletionMap = $request->attributes->get('unit_completion_map', []);
+        return (bool) ($unitCompletionMap[$this->id] ?? false);
     }
 }
 
