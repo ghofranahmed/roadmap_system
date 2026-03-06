@@ -16,17 +16,20 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1) Admin
+        // 1) System Default Admins (must be created first)
+        $this->call(SystemDefaultAdminsSeeder::class);
+
+        // 2) Admin
         User::factory()->admin()->create([
             'username' => 'admin',
             'email' => 'admin@test.com',
             'password' => bcrypt('password'),
         ]);
 
-        // 2) Users عاديين
+        // 3) Users عاديين
         $users = User::factory()->count(40)->create();
 
-        // 3) Roadmaps + Units + Lessons + SubLessons + Resources
+        // 4) Roadmaps + Units + Lessons + SubLessons + Resources
         $roadmaps = Roadmap::factory()->count(8)->create();
 
         foreach ($roadmaps as $roadmap) {
@@ -69,7 +72,7 @@ class DatabaseSeeder extends Seeder
                 }
             }
 
-            // 4) Enrollments (مع unique user_id+roadmap_id)
+            // 5) Enrollments (مع unique user_id+roadmap_id)
             $pickedUsers = $users->random(rand(10, 25));
             foreach ($pickedUsers as $user) {
                 RoadmapEnrollment::firstOrCreate(
@@ -84,7 +87,7 @@ class DatabaseSeeder extends Seeder
             }
         }
 
-        // 5) Lesson tracking (اختياري قوي للاختبار)
+        // 6) Lesson tracking (اختياري قوي للاختبار)
         $allLessons = Lesson::query()->pluck('id');
         foreach ($users->random(20) as $user) {
             foreach ($allLessons->random(min(25, $allLessons->count())) as $lessonId) {

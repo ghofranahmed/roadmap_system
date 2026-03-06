@@ -45,17 +45,31 @@
 
                 <div class="form-group">
                     <label for="email">Email</label>
-                    <input type="email"
-                           class="form-control @error('email') is-invalid @enderror"
-                           id="email"
-                           name="email"
-                           value="{{ old('email', $user->email) }}"
-                           maxlength="255">
-                    @error('email')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
-                    @enderror
+                    @if($user->isProtectedSystemAdmin())
+                        <input type="email"
+                               class="form-control"
+                               id="email"
+                               name="email"
+                               value="{{ old('email', $user->email) }}"
+                               maxlength="255"
+                               readonly
+                               disabled>
+                        <small class="form-text text-muted">
+                            Email cannot be changed for system default admin accounts.
+                        </small>
+                    @else
+                        <input type="email"
+                               class="form-control @error('email') is-invalid @enderror"
+                               id="email"
+                               name="email"
+                               value="{{ old('email', $user->email) }}"
+                               maxlength="255">
+                        @error('email')
+                            <span class="invalid-feedback" role="alert">
+                                <strong>{{ $message }}</strong>
+                            </span>
+                        @enderror
+                    @endif
                 </div>
 
                 <div class="form-group">

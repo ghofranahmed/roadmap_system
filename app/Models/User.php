@@ -112,6 +112,25 @@ public function hasEnrolled($roadmapId)
         return in_array($this->role, ['admin', 'tech_admin']);
     }
 
+    /**
+     * Protected system admin emails that cannot be deleted or have email changed.
+     */
+    protected const PROTECTED_SYSTEM_ADMIN_EMAILS = [
+        'admin@system.com',
+        'techadmin@system.com',
+    ];
+
+    /**
+     * Check if this user is a protected system admin.
+     * Protected system admins cannot be deleted or have their email changed.
+     *
+     * @return bool
+     */
+    public function isProtectedSystemAdmin(): bool
+    {
+        return in_array($this->email, self::PROTECTED_SYSTEM_ADMIN_EMAILS);
+    }
+
     public function announcements()
     {
         return $this->hasMany(Announcement::class, 'created_by');

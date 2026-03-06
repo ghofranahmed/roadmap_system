@@ -58,6 +58,11 @@ class UserPolicy
             return false;
         }
 
+        // Prevent deleting protected system admin accounts
+        if ($model->isProtectedSystemAdmin()) {
+            return false;
+        }
+
         // Prevent deleting yourself
         return $user->id !== $model->id;
     }

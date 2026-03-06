@@ -87,6 +87,11 @@ class AdminUserController extends Controller
             'password' => ['sometimes', 'string', 'min:8', 'confirmed'],
         ]);
 
+        // Prevent email change for protected system admin accounts
+        if ($user->isProtectedSystemAdmin() && isset($validated['email']) && $validated['email'] !== $user->email) {
+            return $this->errorResponse('Email cannot be changed for system default admin accounts', null, 403);
+        }
+
         // Prevent normal admin from assigning or changing role to tech_admin
         // Normal admins can only assign: user, admin (not tech_admin)
         if (isset($validated['role']) && $validated['role'] === 'tech_admin') {
@@ -115,6 +120,11 @@ class AdminUserController extends Controller
     public function destroy($id)
     {
         $user = User::findOrFail($id);
+        
+        // Prevent deleting protected system admin accounts
+        if ($user->isProtectedSystemAdmin()) {
+            return $this->errorResponse('System default admin accounts cannot be deleted', null, 403);
+        }
         
         // Prevent deleting yourself
         if ($user->id === auth()->id()) {

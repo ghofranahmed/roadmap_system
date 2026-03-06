@@ -169,6 +169,11 @@ class AuthController extends Controller
         /** @var User $user */
         $user = $request->user();
         
+        // Prevent deleting protected system admin accounts
+        if ($user->isProtectedSystemAdmin()) {
+            return $this->errorResponse('System default admin accounts cannot be deleted', null, 403);
+        }
+        
         if (!Hash::check($request->password, $user->password)) {
             return $this->errorResponse('كلمة المرور غير صحيحة', null, 401);
         }

@@ -87,6 +87,14 @@ class UserController extends Controller
             'password' => ['nullable', 'string', 'min:8', 'confirmed'],
         ]);
 
+        // Prevent email change for protected system admin accounts
+        if ($user->isProtectedSystemAdmin() && isset($validated['email']) && $validated['email'] !== $user->email) {
+            return redirect()
+                ->back()
+                ->withErrors(['email' => 'Email cannot be changed for system default admin accounts.'])
+                ->withInput();
+        }
+
         // STRICT RULE: Prevent role escalation via changeRole policy
         if (isset($validated['role']) && $validated['role'] !== $user->role) {
             if (!Gate::allows('changeRole', [$user, $validated['role']])) {
@@ -125,6 +133,13 @@ class UserController extends Controller
     public function destroy(Request $request, User $user)
     {
         $this->authorize('delete', $user);
+
+        // Prevent deleting protected system admin accounts
+        if ($user->isProtectedSystemAdmin()) {
+            return redirect()
+                ->route('admin.users.show', $user)
+                ->withErrors(['delete' => 'System default admin accounts cannot be deleted.']);
+        }
 
         // Extra safety: prevent deleting self (also enforced in policy)
         if ($user->id === $request->user()->id) {

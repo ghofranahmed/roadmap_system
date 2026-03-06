@@ -44,9 +44,15 @@
 
                 <dt class="col-sm-3">Role</dt>
                 <dd class="col-sm-9">
-                    <span class="badge badge-{{ $user->role === 'tech_admin' ? 'warning' : ($user->role === 'admin' ? 'primary' : 'secondary') }}">
-                        {{ $user->role }}
-                    </span>
+                    @if($user->isProtectedSystemAdmin())
+                        <span class="badge badge-warning">
+                            {{ $user->role === 'admin' ? 'System Admin' : 'System Tech Admin' }}
+                        </span>
+                    @else
+                        <span class="badge badge-{{ $user->role === 'tech_admin' ? 'warning' : ($user->role === 'admin' ? 'primary' : 'secondary') }}">
+                            {{ $user->role }}
+                        </span>
+                    @endif
                 </dd>
 
                 <dt class="col-sm-3">Created At</dt>
@@ -70,13 +76,19 @@
                     </button>
                 </form>
 
-                <form action="{{ route('admin.users.destroy', $user) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this user?');">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" class="btn btn-danger" {{ auth()->id() === $user->id ? 'disabled' : '' }}>
+                @if(!$user->isProtectedSystemAdmin())
+                    <form action="{{ route('admin.users.destroy', $user) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this user?');">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="btn btn-danger" {{ auth()->id() === $user->id ? 'disabled' : '' }}>
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </form>
+                @else
+                    <button type="button" class="btn btn-danger" disabled title="System default admin accounts cannot be deleted">
                         <i class="fas fa-trash"></i> Delete
                     </button>
-                </form>
+                @endif
             </div>
         </div>
     </div>

@@ -74,14 +74,22 @@
                             required>
                         <option value="">Select Role</option>
                         <option value="admin" {{ old('role', 'admin') == 'admin' ? 'selected' : '' }}>Normal Admin</option>
-                        <option value="tech_admin" {{ old('role') == 'tech_admin' ? 'selected' : '' }}>Technical Admin</option>
+                        @if(isset($canCreateTechAdmin) && $canCreateTechAdmin)
+                            <option value="tech_admin" {{ old('role') == 'tech_admin' ? 'selected' : '' }}>Technical Admin</option>
+                        @endif
                     </select>
                     @error('role')
                         <span class="invalid-feedback" role="alert">
                             <strong>{{ $message }}</strong>
                         </span>
                     @enderror
-                    <small class="form-text text-muted">Select the role for the new admin user.</small>
+                    <small class="form-text text-muted">
+                        @if(isset($canCreateTechAdmin) && $canCreateTechAdmin)
+                            Select the role for the new admin user. You can create both Normal Admin and Technical Admin accounts.
+                        @else
+                            Select the role for the new admin user. You can only create Normal Admin accounts.
+                        @endif
+                    </small>
                 </div>
 
                 <div class="form-group">

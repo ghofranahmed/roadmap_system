@@ -77,6 +77,11 @@
                             </td>
                             <td>{{ $user->created_at->format('Y-m-d H:i') }}</td>
                             <td>
+                                @if($user->isProtectedSystemAdmin())
+                                    <span class="badge badge-warning mr-1">
+                                        {{ $user->role === 'admin' ? 'System Admin' : 'System Tech Admin' }}
+                                    </span>
+                                @endif
                                 <a href="{{ route('admin.users.show', $user) }}" class="btn btn-sm btn-info">
                                     <i class="fas fa-eye"></i> View
                                 </a>

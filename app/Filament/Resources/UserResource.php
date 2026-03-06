@@ -191,6 +191,9 @@ class UserResource extends Resource
                 Tables\Actions\DeleteAction::make()
                     ->authorize(fn (User $record) => \Illuminate\Support\Facades\Gate::allows('delete', $record))
                     ->before(function (User $record) {
+                        if ($record->isProtectedSystemAdmin()) {
+                            throw new \Exception('System default admin accounts cannot be deleted.');
+                        }
                         if ($record->id === auth()->id()) {
                             throw new \Exception('You cannot delete your own account.');
                         }
@@ -198,7 +201,14 @@ class UserResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->before(function ($records) {
+                            foreach ($records as $record) {
+                                if ($record->isProtectedSystemAdmin()) {
+                                    throw new \Exception('Cannot delete system default admin accounts.');
+                                }
+                            }
+                        }),
                 ]),
             ])
             ->defaultSort('created_at', 'desc');
