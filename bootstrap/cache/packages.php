@@ -97,20 +97,6 @@
       0 => 'Knuckles\\Scribe\\ScribeServiceProvider',
     ),
   ),
-  'laravel/pail' => 
-  array (
-    'providers' => 
-    array (
-      0 => 'Laravel\\Pail\\PailServiceProvider',
-    ),
-  ),
-  'laravel/sail' => 
-  array (
-    'providers' => 
-    array (
-      0 => 'Laravel\\Sail\\SailServiceProvider',
-    ),
-  ),
   'laravel/sanctum' => 
   array (
     'providers' => 
@@ -173,13 +159,6 @@
     'providers' => 
     array (
       0 => 'Termwind\\Laravel\\TermwindServiceProvider',
-    ),
-  ),
-  'pestphp/pest-plugin-laravel' => 
-  array (
-    'providers' => 
-    array (
-      0 => 'Pest\\Laravel\\PestServiceProvider',
     ),
   ),
   'ryangjchandler/blade-capture-directive' => 

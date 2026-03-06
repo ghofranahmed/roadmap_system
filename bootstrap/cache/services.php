@@ -37,19 +37,16 @@
     33 => 'JeroenNoten\\LaravelAdminLte\\AdminLteServiceProvider',
     34 => 'Kirschbaum\\PowerJoins\\PowerJoinsServiceProvider',
     35 => 'Knuckles\\Scribe\\ScribeServiceProvider',
-    36 => 'Laravel\\Pail\\PailServiceProvider',
-    37 => 'Laravel\\Sail\\SailServiceProvider',
-    38 => 'Laravel\\Sanctum\\SanctumServiceProvider',
-    39 => 'Laravel\\Socialite\\SocialiteServiceProvider',
-    40 => 'Laravel\\Tinker\\TinkerServiceProvider',
-    41 => 'Laravel\\Ui\\UiServiceProvider',
-    42 => 'Livewire\\LivewireServiceProvider',
-    43 => 'Carbon\\Laravel\\ServiceProvider',
-    44 => 'NunoMaduro\\Collision\\Adapters\\Laravel\\CollisionServiceProvider',
-    45 => 'Termwind\\Laravel\\TermwindServiceProvider',
-    46 => 'Pest\\Laravel\\PestServiceProvider',
-    47 => 'RyanChandler\\BladeCaptureDirective\\BladeCaptureDirectiveServiceProvider',
-    48 => 'App\\Providers\\AppServiceProvider',
+    36 => 'Laravel\\Sanctum\\SanctumServiceProvider',
+    37 => 'Laravel\\Socialite\\SocialiteServiceProvider',
+    38 => 'Laravel\\Tinker\\TinkerServiceProvider',
+    39 => 'Laravel\\Ui\\UiServiceProvider',
+    40 => 'Livewire\\LivewireServiceProvider',
+    41 => 'Carbon\\Laravel\\ServiceProvider',
+    42 => 'NunoMaduro\\Collision\\Adapters\\Laravel\\CollisionServiceProvider',
+    43 => 'Termwind\\Laravel\\TermwindServiceProvider',
+    44 => 'RyanChandler\\BladeCaptureDirective\\BladeCaptureDirectiveServiceProvider',
+    45 => 'App\\Providers\\AppServiceProvider',
   ),
   'eager' => 
   array (
@@ -76,16 +73,14 @@
     20 => 'JeroenNoten\\LaravelAdminLte\\AdminLteServiceProvider',
     21 => 'Kirschbaum\\PowerJoins\\PowerJoinsServiceProvider',
     22 => 'Knuckles\\Scribe\\ScribeServiceProvider',
-    23 => 'Laravel\\Pail\\PailServiceProvider',
-    24 => 'Laravel\\Sanctum\\SanctumServiceProvider',
-    25 => 'Laravel\\Ui\\UiServiceProvider',
-    26 => 'Livewire\\LivewireServiceProvider',
-    27 => 'Carbon\\Laravel\\ServiceProvider',
-    28 => 'NunoMaduro\\Collision\\Adapters\\Laravel\\CollisionServiceProvider',
-    29 => 'Termwind\\Laravel\\TermwindServiceProvider',
-    30 => 'Pest\\Laravel\\PestServiceProvider',
-    31 => 'RyanChandler\\BladeCaptureDirective\\BladeCaptureDirectiveServiceProvider',
-    32 => 'App\\Providers\\AppServiceProvider',
+    23 => 'Laravel\\Sanctum\\SanctumServiceProvider',
+    24 => 'Laravel\\Ui\\UiServiceProvider',
+    25 => 'Livewire\\LivewireServiceProvider',
+    26 => 'Carbon\\Laravel\\ServiceProvider',
+    27 => 'NunoMaduro\\Collision\\Adapters\\Laravel\\CollisionServiceProvider',
+    28 => 'Termwind\\Laravel\\TermwindServiceProvider',
+    29 => 'RyanChandler\\BladeCaptureDirective\\BladeCaptureDirectiveServiceProvider',
+    30 => 'App\\Providers\\AppServiceProvider',
   ),
   'deferred' => 
   array (
@@ -243,8 +238,6 @@
     'validator' => 'Illuminate\\Validation\\ValidationServiceProvider',
     'validation.presence' => 'Illuminate\\Validation\\ValidationServiceProvider',
     'Illuminate\\Contracts\\Validation\\UncompromisedVerifier' => 'Illuminate\\Validation\\ValidationServiceProvider',
-    'Laravel\\Sail\\Console\\InstallCommand' => 'Laravel\\Sail\\SailServiceProvider',
-    'Laravel\\Sail\\Console\\PublishCommand' => 'Laravel\\Sail\\SailServiceProvider',
     'Laravel\\Socialite\\Contracts\\Factory' => 'Laravel\\Socialite\\SocialiteServiceProvider',
     'command.tinker' => 'Laravel\\Tinker\\TinkerServiceProvider',
   ),
@@ -287,9 +280,6 @@
     array (
     ),
     'Illuminate\\Validation\\ValidationServiceProvider' => 
-    array (
-    ),
-    'Laravel\\Sail\\SailServiceProvider' => 
     array (
     ),
     'Laravel\\Socialite\\SocialiteServiceProvider' => 
