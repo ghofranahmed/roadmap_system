@@ -3,13 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ChatbotSetting extends Model
 {
     protected $fillable = [
         'provider',
-        'model_name',
         'temperature',
         'max_tokens',
         'max_context_messages',
@@ -37,7 +35,6 @@ class ChatbotSetting extends Model
             ['id' => 1],
             [
                 'provider' => config('services.chatbot.provider', 'openai'),
-                'model_name' => null,
                 'temperature' => 0.7,
                 'max_tokens' => 1000,
                 'max_context_messages' => config('services.chatbot.max_context_messages', 10),
@@ -48,8 +45,4 @@ class ChatbotSetting extends Model
         );
     }
 
-    public function updater(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'updated_by');
-    }
 }

@@ -13,7 +13,6 @@ class ChatMessage extends Model
         'chat_room_id',
         'user_id',
         'content',
-        'attachment',
         'sent_at',
         'edited_at',
     ];

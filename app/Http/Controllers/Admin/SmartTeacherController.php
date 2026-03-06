@@ -49,7 +49,6 @@ class SmartTeacherController extends Controller
     {
         $validated = $request->validate([
             'provider' => 'required|in:openai,groq,gemini,dummy',
-            'model_name' => 'nullable|string|max:255',
             'temperature' => 'required|numeric|min:0|max:2',
             'max_tokens' => 'required|integer|min:1|max:10000',
             'max_context_messages' => 'required|integer|min:1|max:100',

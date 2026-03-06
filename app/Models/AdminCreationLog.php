@@ -26,11 +26,4 @@ class AdminCreationLog extends Model
         return $this->belongsTo(User::class, 'creator_id');
     }
 
-    /**
-     * Get the user that was created.
-     */
-    public function createdUser(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'created_user_id');
-    }
 }

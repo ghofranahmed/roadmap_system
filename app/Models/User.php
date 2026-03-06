@@ -34,7 +34,6 @@ class User extends Authenticatable
         'password' => 'hashed',
         'last_active_at' => 'datetime',
         'last_login_at' => 'datetime',
-        'is_admin' => 'boolean',
         'is_notifications_enabled' => 'boolean',
     ];
     public function enrollments() { 
@@ -58,10 +57,7 @@ class User extends Authenticatable
     public function linkedAccounts() { 
         return $this->hasMany(LinkedAccount::class);
          }
-     public function settings()
-{
-    return $this->hasMany(Setting::class);
-} /**
+    /**
      * التحقق مما إذا كان المستخدم مشتركاً في خريطة طريق معينة
      */
 public function hasEnrolled($roadmapId)
